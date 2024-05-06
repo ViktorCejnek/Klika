@@ -21,7 +21,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "STEP_MOTOR.h"
+#include "TMC2009_UART.h"
+//#include "STEP_MOTOR_CONFIG.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -108,6 +110,14 @@ int main(void)
   MX_LPUART1_UART_Init();
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
+  //HAL_UART_MspInit(hlpuart1);
+
+  TMC_UART = &hlpuart1;
+
+  test();
+  //HAL_UART_Receive(huart, pData, Size, Timeout);
+
+  //StepMotor_WaveDriveChangeStep(100, 500);
   //HAL_GPIO_WritePin(LED_GPIO_Port,LED_Pin,GPIO_PIN_SET);
   /* USER CODE END 2 */
 
@@ -122,6 +132,8 @@ int main(void)
     HAL_Delay(2000);
     HAL_GPIO_TogglePin(LED_GPIO_Port,LED_Pin);
     HAL_Delay(2000);
+
+
   }
   /* USER CODE END 3 */
 }
