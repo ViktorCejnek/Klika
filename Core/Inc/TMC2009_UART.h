@@ -5,14 +5,21 @@
  *      Author: Viktor Cejnek
  */
 
-#ifndef INC_TMC2009_UART_H_
-#define INC_TMC2009_UART_H_
-
 #include "stm32wbxx_hal.h"
+
+#ifndef INC_TMC2009_UART_H
+#define INC_TMC2009_UART_H
 
 void test(void);
 
-UART_HandleTypeDef *TMC_UART;
+
+extern UART_HandleTypeDef *TMC_UART;
+/*
+uint8_t m_UART_rFrame[4];
+uint8_t m_UART_wFrame[8];
+uint16_t m_UART_communication_pause; // int(500/baudrate*1000000)
+uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
+
 
 // ADDR write offset
 #define REG_OFFSET				0x80
@@ -94,10 +101,5 @@ UART_HandleTypeDef *TMC_UART;
 #define REG_mres_4 				6
 #define REG_mres_2 				7
 #define REG_mres_1 				8
-
-uint8_t m_UART_rFrame[4] = {0x55, 0, 0, 0};
-uint8_t m_UART_wFrame[8] = {0x55, 0, 0, 0 , 0, 0, 0, 0};
-uint16_t m_UART_communication_pause = 4340; // int(500/baudrate*1000000)
-uint16_t m_UART_communication_timeout = 173; // int(20000/baudrate*1000)
 
 #endif /* INC_TMC2009_UART_H_ */
