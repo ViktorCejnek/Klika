@@ -25,3 +25,6 @@ endverbatim
 addtogroup
 baudrate
 crc
+extern
+vs
+datasheet

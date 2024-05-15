@@ -28,10 +28,13 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32wbxx_hal.h"
+#include "app_conf.h"
+#include "app_entry.h"
+#include "app_common.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "TMC2009_UART.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -87,7 +90,7 @@ void Error_Handler(void);
 #define DIAG_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-
+void delay_us (uint16_t us);
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
