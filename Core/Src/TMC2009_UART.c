@@ -23,15 +23,15 @@ void TMC_turn (int16_t angle){
 	} else {
 		HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, GPIO_PIN_RESET);
 	}
-	uint64_t Num_of_steps = 200*8*angle/360;
+	uint64_t Num_of_steps = 2*200*8*angle/360*32/16;
 
 	while (Num_of_steps--){
 		HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
-		//HAL_Delay(1);
-		delay_us(500);
+		//HAL_Delay(2);
+		delay_us(100);
 		HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
-		//HAL_Delay(1);
-		delay_us(500);
+		//HAL_Delay(2);
+		delay_us(100);
 	}
 }
 

@@ -28,3 +28,4 @@ crc
 extern
 vs
 datasheet
+vref

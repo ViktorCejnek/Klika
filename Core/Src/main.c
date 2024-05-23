@@ -122,11 +122,21 @@ int main(void)
 
   HAL_GPIO_WritePin(MS1_GPIO_Port, MS1_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(MS2_GPIO_Port, MS2_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(STEP_GPIO_Port, STEP_Pin, GPIO_PIN_RESET);
-  TMC_write_IHOLD_IRUN(0, 16, 2);
-  TMC_write(REG_GCONF, REG_vsense, 1);
+  TMC_write_IHOLD_IRUN(0, 31, 4);					//setup max current
+  HAL_Delay(10);
+  TMC_read(REG_DRVSTATUS);
+  HAL_Delay(10);
+  TMC_write(REG_CHOPCONF, REG_vsense, 1);			//setup TMC to use VSENSE
+  HAL_Delay(10);
+  TMC_write(REG_GCONF, REG_i_scale_analog, 0);		//disable external Vref
+  HAL_Delay(10);
+  TMC_read(REG_DRVSTATUS);
+  HAL_Delay(10);
+  TMC_read(REG_CHOPCONF);
+  HAL_Delay(10);
   TMC_read(REG_DRVSTATUS);
   HAL_TIM_Base_Start(&htim1);
 
