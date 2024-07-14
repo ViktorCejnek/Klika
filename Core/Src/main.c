@@ -125,19 +125,68 @@ int main(void)
   HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(STEP_GPIO_Port, STEP_Pin, GPIO_PIN_RESET);
-  TMC_write_IHOLD_IRUN(0, 31, 4);					//setup max current
-  HAL_Delay(10);
-  TMC_read(REG_DRVSTATUS);
-  HAL_Delay(10);
-  TMC_write(REG_CHOPCONF, REG_vsense, 1);			//setup TMC to use VSENSE
+  HAL_GPIO_WritePin(SPREAD_GPIO_Port, SPREAD_Pin, GPIO_PIN_RESET);
+
+  //setup sequence:
+
+  TMC_read(REG_DRVSTATUS);							//read out the state of TMC2209
   HAL_Delay(10);
   TMC_write(REG_GCONF, REG_i_scale_analog, 0);		//disable external Vref
   HAL_Delay(10);
-  TMC_read(REG_DRVSTATUS);
+  TMC_write(REG_CHOPCONF, REG_vsense, 1);			//setup TMC to use VSENSE
   HAL_Delay(10);
-  TMC_read(REG_CHOPCONF);
+  TMC_write_IHOLD_IRUN(0, 31, 4);					//setup IHOLD, IRUN and I_HOLD_DELAY
   HAL_Delay(10);
-  TMC_read(REG_DRVSTATUS);
+  	  	  	  	  	  	  	  	  	  	  	  	  	//TPOWERDOWN 2-255 default = 20
+
+  TMC_write(REG_CHOPCONF, REG_en_spreadcycle, 0);	//clear en_spreadcycle in GCONF
+  HAL_Delay(10);
+  TMC_write(REG_PWMCONF, REG_pwm_autoscale, 1);		//set pwm_autoscale and pwm_autograd in PWMCONF
+  HAL_Delay(10);
+  TMC_write(REG_PWMCONF, REG_pwm_autograd, 1);
+  HAL_Delay(10);
+
+  TMC_write(REG_PWMCONF, REG_pwm_freq0, 0);			//select PWM_FREQ in PWMCONF
+  HAL_Delay(10);
+  TMC_write(REG_PWMCONF, REG_pwm_freq1, 1);
+  HAL_Delay(10);
+
+  TMC_write(REG_CHOPCONF, REG_toff, 5);	  	  	  	//CHOPCONF set basic setting e.g.: TOFF=5, TBL=2, HSTART=4, HEND=0
+  HAL_Delay(10);
+  TMC_write(REG_CHOPCONF, REG_tbl0, 0);
+  HAL_Delay(10);
+  TMC_write(REG_CHOPCONF, REG_tbl1, 1);
+  HAL_Delay(10);
+  TMC_write(REG_CHOPCONF, REG_hstrt, 4);
+  HAL_Delay(10);
+
+  TMC_write(REG_CHOPCONF, REG_hend0, 0);
+  HAL_Delay(10);
+  TMC_write(REG_CHOPCONF, REG_hend1, 0);
+  HAL_Delay(10);
+  TMC_write(REG_CHOPCONF, REG_hend2, 1);
+  HAL_Delay(10);
+  TMC_write(REG_CHOPCONF, REG_hend3, 0);
+  HAL_Delay(10);
+
+  	  	  	  //execute automatic tuning procedure AT
+
+  	  	  	  //slowly accelerate to MAX velocity e.g. VMAX
+
+  	  	  	  //may have to tweak TMWMTHRS
+
+  	  	  	  //continue with SC2
+
+  TMC_read(REG_DRVSTATUS);							//read out the state of TMC2209
+  HAL_Delay(10);
+  TMC_read(REG_CHOPCONF);							//read out the chopconf of TMC2209
+  HAL_Delay(10);
+  TMC_read(REG_DRVSTATUS);							//read out the state of TMC2209
+  HAL_Delay(10);
+
+
+
+
   HAL_TIM_Base_Start(&htim1);
 
   /* USER CODE END 2 */

@@ -73,6 +73,7 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 #define REG_MSCNT          		0x6A
 #define REG_CHOPCONF        	0x6C
 #define REG_DRVSTATUS       	0x6F
+#define REG_PWMCONF				0x70
 
 
 /*
@@ -147,7 +148,7 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 // 31 30 29 28 27 26 25 24		23 22 21 20 19 18 17 16		15 14 13 12 11 10  9  8		 7  6  5  4  3  2  1  0
 
 // GCONF
-#define REG_i_scale_analog      1<<24	//eg. bit 0 translates to bit 24
+#define REG_i_scale_analog      1<<24	//e.g. bit 0 translates to bit 24
 #define REG_internal_rsense     1<<25
 #define REG_en_spreadcycle      1<<26
 #define REG_shaft               1<<27
@@ -157,18 +158,38 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 #define REG_mstep_reg_select    1<<31
 #define REG_multistep_filt		1<<16
 
+// PWMCONF
+#define REG_PWM_LIM				15<<4
+#define REG_PWM_REG				15<<0
+#define REG_freewheel1			1<<13
+#define REG_freewheel0			1<<12
+#define REG_pwm_autograd		1<<11
+#define REG_pwm_autoscale		1<<10
+#define REG_pwm_freq1			1<<9
+#define REG_pwm_freq0			1<<8
+#define REG_PWM_GRAD			255<<16
+#define REG_PWM_OFS				255<<24
+
 // GSTAT
 #define REG_reset               1<<24
 #define REG_drv_err             1<<25
 #define REG_uv_cp               1<<26
 
 // CHOPCONF
-#define REG_vsense              1<<9
+#define REG_intpol              1<<4
 #define REG_msres0              1<<0
 #define REG_msres1              1<<1
 #define REG_msres2              1<<2
 #define REG_msres3              1<<3
-#define REG_intpol              1<<4
+#define REG_vsense              1<<9
+#define REG_tbl1				1<<8
+#define REG_tbl0				1<<23
+#define REG_hend3				1<<18
+#define REG_hend2				1<<17
+#define REG_hend1				1<<16
+#define REG_hend0				1<<31
+#define REG_hstrt				7<<28
+#define REG_toff				15<<24
 
 // IOIN
 #define REG_io_enn              1<<24
