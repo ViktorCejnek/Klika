@@ -12,7 +12,8 @@
 
 void TMC_turn (int16_t angle);
 uint32_t TMC_read (uint8_t address);
-uint32_t TMC_write (uint8_t reg_address, uint32_t reg_mask, uint8_t data);
+uint32_t TMC_write_bit (uint8_t reg_address, uint32_t reg_mask, uint8_t data);
+uint32_t TMC_write_word (uint8_t reg_address, uint32_t reg_mask, uint32_t data);
 uint32_t TMC_write_IHOLD_IRUN(uint8_t IHOLD, uint8_t IRUN, uint8_t IHOLDDELAY);
 uint32_t TMC_write_stop(void);
 uint32_t TMC_write_move_angle(uint32_t angle);
@@ -66,6 +67,7 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 #define REG_IOIN            	0x06
 #define REG_IHOLD_IRUN      	0x10
 #define REG_TSTEP           	0x12
+#define REG_TPWMTHRS			0x13
 #define REG_TCOOLTHRS       	0x14
 #define REG_VACTUAL				0x22
 #define REG_SGTHRS          	0x40
@@ -177,10 +179,10 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 
 // CHOPCONF
 #define REG_intpol              1<<4
-#define REG_msres0              1<<0
-#define REG_msres1              1<<1
-#define REG_msres2              1<<2
-#define REG_msres3              1<<3
+#define REG_mres0               1<<0
+#define REG_mres1               1<<1
+#define REG_mres2				1<<2
+#define REG_mres3            	1<<3
 #define REG_vsense              1<<9
 #define REG_tbl1				1<<8
 #define REG_tbl0				1<<23
@@ -221,5 +223,11 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 
 // SGTHRS
 #define REG_sgthrs              255<<24
+
+// TPWMTHRS - 20 bits
+#define REG_tpwmthrs_val		0xFFFFF<<8
+
+// VACTUAL - 24 bits
+#define REG_vactual_val			0xFFFFFF<<8
 
 #endif /* INC_TMC2009_UART_H_ */

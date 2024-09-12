@@ -30,3 +30,7 @@ vs
 datasheet
 vref
 chopconf
+vactual
+upscaling
+microstepping
+rsense

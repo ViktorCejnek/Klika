@@ -45,6 +45,8 @@ ADC_HandleTypeDef hadc1;
 
 IPCC_HandleTypeDef hipcc;
 
+LPTIM_HandleTypeDef hlptim1;
+
 UART_HandleTypeDef hlpuart1;
 
 RTC_HandleTypeDef hrtc;
@@ -64,6 +66,7 @@ static void MX_IPCC_Init(void);
 static void MX_LPUART1_UART_Init(void);
 static void MX_RTC_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_LPTIM1_Init(void);
 static void MX_RF_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -71,7 +74,9 @@ static void MX_RF_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+uint32_t sgresult = 0;
+uint32_t tstep = 0;
+uint32_t gstat = 0;
 /* USER CODE END 0 */
 
 /**
@@ -99,7 +104,7 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
-/* Configure the peripherals common clocks */
+  /* Configure the peripherals common clocks */
   PeriphCommonClock_Config();
 
   /* IPCC initialisation */
@@ -115,65 +120,159 @@ int main(void)
   MX_LPUART1_UART_Init();
   MX_RTC_Init();
   MX_TIM1_Init();
+  MX_LPTIM1_Init();
   MX_RF_Init();
   /* USER CODE BEGIN 2 */
 
+
+
   TMC_UART = &hlpuart1;
+
+  HAL_TIM_Base_Start(&htim1);
+  /*HAL_TIM_PeriodElapsedCallback(&hlptim1);
+  HAL_TIM_PWM_Init(&hlptim1);
+  HAL_LPTIM_PWM_Start(&hlptim1, Period, Pulse);
+  HAL_TIM_PWM_ConfigChannel(htim, sConfig, Channel);*/
+
 
   HAL_GPIO_WritePin(MS1_GPIO_Port, MS1_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(MS2_GPIO_Port, MS2_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(STEP_GPIO_Port, STEP_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(SPREAD_GPIO_Port, SPREAD_Pin, GPIO_PIN_RESET);
 
-  //setup sequence:
+  //------------------------------------------------------------------------------------------
+  //	setup sequence:
+  //------------------------------------------------------------------------------------------
 
-  TMC_read(REG_DRVSTATUS);							//read out the state of TMC2209
-  HAL_Delay(10);
-  TMC_write(REG_GCONF, REG_i_scale_analog, 0);		//disable external Vref
-  HAL_Delay(10);
-  TMC_write(REG_CHOPCONF, REG_vsense, 1);			//setup TMC to use VSENSE
-  HAL_Delay(10);
-  TMC_write_IHOLD_IRUN(0, 31, 4);					//setup IHOLD, IRUN and I_HOLD_DELAY
-  HAL_Delay(10);
-  	  	  	  	  	  	  	  	  	  	  	  	  	//TPOWERDOWN 2-255 default = 20
-
-  TMC_write(REG_CHOPCONF, REG_en_spreadcycle, 0);	//clear en_spreadcycle in GCONF
-  HAL_Delay(10);
-  TMC_write(REG_PWMCONF, REG_pwm_autoscale, 1);		//set pwm_autoscale and pwm_autograd in PWMCONF
-  HAL_Delay(10);
-  TMC_write(REG_PWMCONF, REG_pwm_autograd, 1);
+  TMC_read(REG_DRVSTATUS);								//read out the state of TMC2209
   HAL_Delay(10);
 
-  TMC_write(REG_PWMCONF, REG_pwm_freq0, 0);			//select PWM_FREQ in PWMCONF
+  //------------------------------------------------------------------------------------------
+  //	GCONF
+  //------------------------------------------------------------------------------------------
+  TMC_write_bit(REG_GCONF, REG_pdn_disable, 1);			//1 = disable Power down input/enable UART
   HAL_Delay(10);
-  TMC_write(REG_PWMCONF, REG_pwm_freq1, 1);
+  TMC_write_bit(REG_GCONF, REG_i_scale_analog, 0);		//0 = disable external Vref
+  HAL_Delay(10);
+  TMC_write_bit(REG_GCONF, REG_en_spreadcycle, 0);		//0 = clear en_spreadcycle in GCONF
+  HAL_Delay(10);
+  TMC_write_bit(REG_GCONF, REG_internal_rsense, 0);		//0 = use external Rsense
+  HAL_Delay(10);
+  TMC_write_bit(REG_GCONF, REG_mstep_reg_select, 1);	//1 = use value from MSTEP register
+  HAL_Delay(10);
+  TMC_write_bit(REG_GCONF, REG_multistep_filt, 1);		//1 = software pulse filtering
   HAL_Delay(10);
 
-  TMC_write(REG_CHOPCONF, REG_toff, 5);	  	  	  	//CHOPCONF set basic setting e.g.: TOFF=5, TBL=2, HSTART=4, HEND=0
+  //------------------------------------------------------------------------------------------
+  //	CHOPCONF
+  //------------------------------------------------------------------------------------------
+  TMC_write_bit(REG_CHOPCONF, REG_vsense, 1);			//1 = use VSENSE (lower current)
   HAL_Delay(10);
-  TMC_write(REG_CHOPCONF, REG_tbl0, 0);
+  TMC_write_bit(REG_CHOPCONF, REG_intpol, 1);
   HAL_Delay(10);
-  TMC_write(REG_CHOPCONF, REG_tbl1, 1);
+  TMC_write_bit(REG_CHOPCONF, REG_mres3, 1);			//%0000 … 256
+  HAL_Delay(10);										//%0001 … %1000:
+  TMC_write_bit(REG_CHOPCONF, REG_mres3, 0);			//128, 64, 32, 16, 8, 4, 2, FULLSTEP
   HAL_Delay(10);
-  TMC_write(REG_CHOPCONF, REG_hstrt, 4);
+  TMC_write_bit(REG_CHOPCONF, REG_mres3, 0);
+  HAL_Delay(10);
+  TMC_write_bit(REG_CHOPCONF, REG_mres3, 0);
   HAL_Delay(10);
 
-  TMC_write(REG_CHOPCONF, REG_hend0, 0);
+  TMC_write_word(REG_CHOPCONF, REG_toff, 5);	  	  	//CHOPCONF set basic setting e.g.: TOFF=5, TBL=2, HSTART=4, HEND=0
   HAL_Delay(10);
-  TMC_write(REG_CHOPCONF, REG_hend1, 0);
+
+  TMC_write_bit(REG_CHOPCONF, REG_tbl1, 0);
   HAL_Delay(10);
-  TMC_write(REG_CHOPCONF, REG_hend2, 1);
+  TMC_write_bit(REG_CHOPCONF, REG_tbl0, 1);
   HAL_Delay(10);
-  TMC_write(REG_CHOPCONF, REG_hend3, 0);
+  TMC_write_word(REG_CHOPCONF, REG_hstrt, 3);			//value = xvalue - 1
   HAL_Delay(10);
+
+  TMC_write_bit(REG_CHOPCONF, REG_hend3, 1);
+  HAL_Delay(10);
+  TMC_write_bit(REG_CHOPCONF, REG_hend2, 0);
+  HAL_Delay(10);
+  TMC_write_bit(REG_CHOPCONF, REG_hend1, 0);
+  HAL_Delay(10);
+  TMC_write_bit(REG_CHOPCONF, REG_hend0, 1);
+  HAL_Delay(10);
+
+
+  //------------------------------------------------------------------------------------------
+  //	Velocity Dependent Control
+  //------------------------------------------------------------------------------------------
+  TMC_write_IHOLD_IRUN(10, 10, 4);						//setup IHOLD, IRUN and I_HOLD_DELAY
+  HAL_Delay(10);
+  TMC_write_bit(REG_TPWMTHRS, REG_tpwmthrs_val, 0);		//disable TPWMTHRS e.g. no switching to spreadcycle
+  HAL_Delay(10);
+  	  	  	  	  	  	  	  	  	  	  	  	  		//TPOWERDOWN 2-255 default = 20
+
+
+  //------------------------------------------------------------------------------------------
+  //	PWMCONF
+  //------------------------------------------------------------------------------------------
+  TMC_write_bit(REG_PWMCONF, REG_pwm_autoscale, 1);		//set pwm_autoscale and pwm_autograd in PWMCONF
+  HAL_Delay(10);
+  TMC_write_bit(REG_PWMCONF, REG_pwm_autograd, 1);
+  HAL_Delay(10);
+
+  TMC_write_bit(REG_PWMCONF, REG_pwm_freq0, 0);			//select PWM_FREQ in PWMCONF
+  HAL_Delay(10);
+  TMC_write_bit(REG_PWMCONF, REG_pwm_freq1, 1);
+  HAL_Delay(10);
+
+
+/*
+  TMC_read(REG_CHOPCONF);
+  HAL_Delay(100);
+
+  TMC_read(REG_GCONF);
+  HAL_Delay(100);
+
+  HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_RESET);
+
+  HAL_Delay(1000);
+  TMC_turn(720);
+  //TMC_write_move_angle(0);	//temporary
+
+  while (1){
+  		HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
+  		//HAL_Delay(2);
+  		//delay_us(100);
+  		sgresult = TMC_read(REG_SG_RESULT);
+  		HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
+  		//HAL_Delay(2);
+  		//delay_us(10);
+  		sgresult = TMC_read(REG_SG_RESULT);
+  }
+
+  for (int i = 0; i < 10000; ++i) {
+	HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
+	//gstat = TMC_read(REG_IOIN);
+	delay_us(100);
+	HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
+	delay_us(100);
+	//delay_us(25);
+
+	/*sgresult = TMC_read(REG_SG_RESULT);
+	delay_us(25);
+	tstep = TMC_read(REG_TSTEP);
+	delay_us(25);
+	gstat = TMC_read(REG_IOIN);
+	delay_us(25);
+  }
+
+
+  //HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_SET);
 
   	  	  	  //execute automatic tuning procedure AT
 
   	  	  	  //slowly accelerate to MAX velocity e.g. VMAX
 
-  	  	  	  //may have to tweak TMWMTHRS
+  	  	  	  //may have to tweak TMWMTHRS (disable with 0)
 
   	  	  	  //continue with SC2
 
@@ -182,12 +281,12 @@ int main(void)
   TMC_read(REG_CHOPCONF);							//read out the chopconf of TMC2209
   HAL_Delay(10);
   TMC_read(REG_DRVSTATUS);							//read out the state of TMC2209
-  HAL_Delay(10);
+  HAL_Delay(10);*/
 
 
 
 
-  HAL_TIM_Base_Start(&htim1);
+
 
   /* USER CODE END 2 */
 
@@ -368,6 +467,40 @@ static void MX_IPCC_Init(void)
 }
 
 /**
+  * @brief LPTIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_LPTIM1_Init(void)
+{
+
+  /* USER CODE BEGIN LPTIM1_Init 0 */
+
+  /* USER CODE END LPTIM1_Init 0 */
+
+  /* USER CODE BEGIN LPTIM1_Init 1 */
+
+  /* USER CODE END LPTIM1_Init 1 */
+  hlptim1.Instance = LPTIM1;
+  hlptim1.Init.Clock.Source = LPTIM_CLOCKSOURCE_APBCLOCK_LPOSC;
+  hlptim1.Init.Clock.Prescaler = LPTIM_PRESCALER_DIV32;
+  hlptim1.Init.Trigger.Source = LPTIM_TRIGSOURCE_SOFTWARE;
+  hlptim1.Init.OutputPolarity = LPTIM_OUTPUTPOLARITY_HIGH;
+  hlptim1.Init.UpdateMode = LPTIM_UPDATE_IMMEDIATE;
+  hlptim1.Init.CounterSource = LPTIM_COUNTERSOURCE_INTERNAL;
+  hlptim1.Init.Input1Source = LPTIM_INPUT1SOURCE_GPIO;
+  hlptim1.Init.Input2Source = LPTIM_INPUT2SOURCE_GPIO;
+  if (HAL_LPTIM_Init(&hlptim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN LPTIM1_Init 2 */
+
+  /* USER CODE END LPTIM1_Init 2 */
+
+}
+
+/**
   * @brief LPUART1 Initialization Function
   * @param None
   * @retval None
@@ -383,7 +516,7 @@ static void MX_LPUART1_UART_Init(void)
 
   /* USER CODE END LPUART1_Init 1 */
   hlpuart1.Instance = LPUART1;
-  hlpuart1.Init.BaudRate = 9600;
+  hlpuart1.Init.BaudRate = 460800;
   hlpuart1.Init.WordLength = UART_WORDLENGTH_8B;
   hlpuart1.Init.StopBits = UART_STOPBITS_1;
   hlpuart1.Init.Parity = UART_PARITY_NONE;
