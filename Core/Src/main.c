@@ -225,6 +225,14 @@ int main(void)
   HAL_Delay(10);
 
 
+  HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, 0);
+  HAL_Delay(1000);
+
+  TMC_write_move_angle(128);
+  HAL_Delay(20000);
+  TMC_write_move_angle(0);
+
+
 /*
   TMC_read(REG_CHOPCONF);
   HAL_Delay(100);
@@ -237,18 +245,18 @@ int main(void)
   HAL_Delay(1000);
   TMC_turn(720);
   //TMC_write_move_angle(0);	//temporary
-
+*/
   while (1){
   		HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
   		//HAL_Delay(2);
-  		//delay_us(100);
-  		sgresult = TMC_read(REG_SG_RESULT);
+  		delay_us(500);
+  		//sgresult = TMC_read(REG_SG_RESULT);
   		HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
   		//HAL_Delay(2);
-  		//delay_us(10);
-  		sgresult = TMC_read(REG_SG_RESULT);
+  		delay_us(500);
+  		//sgresult = TMC_read(REG_SG_RESULT);
   }
-
+/*
   for (int i = 0; i < 10000; ++i) {
 	HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
 	//gstat = TMC_read(REG_IOIN);
@@ -257,7 +265,7 @@ int main(void)
 	delay_us(100);
 	//delay_us(25);
 
-	/*sgresult = TMC_read(REG_SG_RESULT);
+	sgresult = TMC_read(REG_SG_RESULT);
 	delay_us(25);
 	tstep = TMC_read(REG_TSTEP);
 	delay_us(25);
@@ -516,7 +524,7 @@ static void MX_LPUART1_UART_Init(void)
 
   /* USER CODE END LPUART1_Init 1 */
   hlpuart1.Instance = LPUART1;
-  hlpuart1.Init.BaudRate = 460800;
+  hlpuart1.Init.BaudRate = 230400;
   hlpuart1.Init.WordLength = UART_WORDLENGTH_8B;
   hlpuart1.Init.StopBits = UART_STOPBITS_1;
   hlpuart1.Init.Parity = UART_PARITY_NONE;
