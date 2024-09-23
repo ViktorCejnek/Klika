@@ -238,8 +238,11 @@ void TIM1_CC_IRQHandler(void)
   /* USER CODE END TIM1_CC_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_CC_IRQn 1 */
+  TIM1->SR &= ~TIM_SR_UIF;
+  TIM1->SR &= ~TIM_SR_CC1IF;
+
   HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
-  //TIM1->CNT= 0;
+  TIM1->CNT = 0;
   /* USER CODE END TIM1_CC_IRQn 1 */
 }
 

@@ -253,7 +253,11 @@ int main(void)
   //ARR register is set to 64k overflow sould happen every 2ms if cnt is not cleared
   //TIM1_CC_IRQHandler(void) generated function is in stm32wbxx_it.c
   //TIM1->CCR1 = 16000;
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  //HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  //timer initialization
+  TIM1->CR1 |= TIM_CR1_CEN;		//timer enable
+  TIM1->DIER |= TIM_DIER_UIE;
+  TIM1->DIER |= TIM_DIER_CC1IE;
   //HAL_TIM_PeriodElapsedCallback(&htim1);
   //---------------------------------------------------------
   /*while (1){
@@ -318,7 +322,11 @@ int main(void)
     /* USER CODE END WHILE */
     MX_APPE_Process();
 
+
     /* USER CODE BEGIN 3 */
+    //change ccr1 register and therefore change rotation speed of motor
+    TIM1->CCR1 = 200;
+
     //HAL_Delay(1000);
     //HAL_GPIO_TogglePin(ENN_GPIO_Port, ENN_Pin);
 
@@ -632,7 +640,7 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
+  if (HAL_TIM_OC_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -643,14 +651,14 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.OCMode = TIM_OCMODE_TIMING;
   sConfigOC.Pulse = 16000;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  if (HAL_TIM_OC_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
