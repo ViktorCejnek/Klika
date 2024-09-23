@@ -1,0 +1,120 @@
+Configuration	Klika
+STM32CubeMX 	6.12.1
+Date	09/19/2024
+MCU	STM32WB15CCUx
+
+
+
+PERIPHERALS	MODES	FUNCTIONS	PINS
+ADC1	IN11 Single-ended	ADC1_IN11	PA6
+LPTIM1	Counts internal clock events	LPTIM1_VS_LPTIM_counterModeInternalClock	VP_LPTIM1_VS_LPTIM_counterModeInternalClock
+LPUART1	Single Wire (Half-Duplex)	LPUART1_TX	PA2
+RCC	Crystal/Ceramic Resonator	RCC_OSC_IN	OSC_IN
+RCC	Crystal/Ceramic Resonator	RCC_OSC_OUT	OSC_OUT
+RCC	Crystal/Ceramic Resonator	RCC_OSC32_IN	PC14-OSC32_IN
+RCC	Crystal/Ceramic Resonator	RCC_OSC32_OUT	PC15-OSC32_OUT
+RF	Activate RF1	RF_RF1	RF1
+RTC	Activate Clock Source	RTC_VS_RTC_Activate	VP_RTC_VS_RTC_Activate
+RTC	Internal WakeUp	RTC_VS_RTC_WakeUp_intern	VP_RTC_VS_RTC_WakeUp_intern
+SYS	Serial Wire	SYS_JTCK-SWCLK	PA14
+SYS	Serial Wire	SYS_JTMS-SWDIO	PA13
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+TIM1	Internal Clock	TIM1_VS_ClockSourceINT	VP_TIM1_VS_ClockSourceINT
+TIM1	PWM Generation No Output	TIM1_VS_no_output1	VP_TIM1_VS_no_output1
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+2	PC14-OSC32_IN	RCC_OSC32_IN	
+3	PC15-OSC32_OUT	RCC_OSC32_OUT	
+9	PA0	GPIO_Output	MS1
+10	PA1	GPIO_Output	MS2
+11	PA2	LPUART1_TX	
+13	PA4	GPIO_Output	SPREAD
+14	PA5	GPIO_Output	ENN
+15	PA6	ADC1_IN11	
+21	RF1	RF_RF1	
+24	OSC_OUT	RCC_OSC_OUT	
+25	OSC_IN	RCC_OSC_IN	
+28	PB0	GPIO_Output	DPH
+29	PB1	GPIO_Output	DPL
+37	PA11	GPIO_Output	DNH
+38	PA12	GPIO_Output	DNL
+39	PA13	SYS_JTMS-SWDIO	
+41	PA14	SYS_JTCK-SWCLK	
+42	PA15	GPIO_Output	LED
+43	PB3	GPIO_Output	STDBY
+44	PB4	GPIO_Output	DIR
+45	PB5	GPIO_Output	STEP
+46	PB6	GPIO_Input	INDEX
+47	PB7	GPIO_Input	DIAG
+PERIPHERALS	MODES	FUNCTIONS	PINS
+ADC1	IN11 Single-ended	ADC1_IN11	PA6
+LPTIM1	Counts internal clock events	LPTIM1_VS_LPTIM_counterModeInternalClock	VP_LPTIM1_VS_LPTIM_counterModeInternalClock
+LPUART1	Single Wire (Half-Duplex)	LPUART1_TX	PA2
+RCC	Crystal/Ceramic Resonator	RCC_OSC_IN	OSC_IN
+RCC	Crystal/Ceramic Resonator	RCC_OSC_OUT	OSC_OUT
+RCC	Crystal/Ceramic Resonator	RCC_OSC32_IN	PC14-OSC32_IN
+RCC	Crystal/Ceramic Resonator	RCC_OSC32_OUT	PC15-OSC32_OUT
+RF	Activate RF1	RF_RF1	RF1
+RTC	Activate Clock Source	RTC_VS_RTC_Activate	VP_RTC_VS_RTC_Activate
+RTC	Internal WakeUp	RTC_VS_RTC_WakeUp_intern	VP_RTC_VS_RTC_WakeUp_intern
+SYS	Serial Wire	SYS_JTCK-SWCLK	PA14
+SYS	Serial Wire	SYS_JTMS-SWDIO	PA13
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+TIM1	Internal Clock	TIM1_VS_ClockSourceINT	VP_TIM1_VS_ClockSourceINT
+TIM1	PWM Generation No Output	TIM1_VS_no_output1	VP_TIM1_VS_no_output1
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+2	PC14-OSC32_IN	RCC_OSC32_IN	
+3	PC15-OSC32_OUT	RCC_OSC32_OUT	
+9	PA0	GPIO_Output	MS1
+10	PA1	GPIO_Output	MS2
+11	PA2	LPUART1_TX	
+13	PA4	GPIO_Output	SPREAD
+14	PA5	GPIO_Output	ENN
+15	PA6	ADC1_IN11	
+21	RF1	RF_RF1	
+24	OSC_OUT	RCC_OSC_OUT	
+25	OSC_IN	RCC_OSC_IN	
+28	PB0	GPIO_Output	DPH
+29	PB1	GPIO_Output	DPL
+37	PA11	GPIO_Output	DNH
+38	PA12	GPIO_Output	DNL
+39	PA13	SYS_JTMS-SWDIO	
+41	PA14	SYS_JTCK-SWCLK	
+42	PA15	GPIO_Output	LED
+43	PB3	GPIO_Output	STDBY
+44	PB4	GPIO_Output	DIR
+45	PB5	GPIO_Output	STEP
+46	PB6	GPIO_Input	INDEX
+47	PB7	GPIO_Input	DIAG
+
+
+
+SOFTWARE PROJECT
+
+Project Settings : 
+Project Name : Klika
+Project Folder : C:\STM32CubeIDE\Klika
+Toolchain / IDE : STM32CubeIDE
+Firmware Package Name and Version : STM32Cube FW_WB V1.20.0
+
+
+Code Generation Settings : 
+STM32Cube MCU packages and embedded software packs : Copy only the necessary library files
+Generate peripheral initialization as a pair of '.c/.h' files per peripheral : No
+Backup previously generated files when re-generating : No
+Delete previously generated files when not re-generated : Yes
+Set all free pins as analog (to optimize the power consumption) : No
+
+
+Toolchains Settings : 
+Compiler Optimizations : 
+
+
+
+
+

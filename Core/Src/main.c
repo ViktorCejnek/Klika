@@ -45,8 +45,6 @@ ADC_HandleTypeDef hadc1;
 
 IPCC_HandleTypeDef hipcc;
 
-LPTIM_HandleTypeDef hlptim1;
-
 UART_HandleTypeDef hlpuart1;
 
 RTC_HandleTypeDef hrtc;
@@ -66,7 +64,6 @@ static void MX_IPCC_Init(void);
 static void MX_LPUART1_UART_Init(void);
 static void MX_RTC_Init(void);
 static void MX_TIM1_Init(void);
-static void MX_LPTIM1_Init(void);
 static void MX_RF_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -120,7 +117,6 @@ int main(void)
   MX_LPUART1_UART_Init();
   MX_RTC_Init();
   MX_TIM1_Init();
-  MX_LPTIM1_Init();
   MX_RF_Init();
   /* USER CODE BEGIN 2 */
 
@@ -128,7 +124,7 @@ int main(void)
 
   TMC_UART = &hlpuart1;
 
-  HAL_TIM_Base_Start(&htim1);
+  //HAL_TIM_Base_Start(&htim1);
   /*HAL_TIM_PeriodElapsedCallback(&hlptim1);
   HAL_TIM_PWM_Init(&hlptim1);
   HAL_LPTIM_PWM_Start(&hlptim1, Period, Pulse);
@@ -228,9 +224,9 @@ int main(void)
   HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, 0);
   HAL_Delay(1000);
 
-  TMC_write_move_angle(128);
-  HAL_Delay(20000);
-  TMC_write_move_angle(0);
+  //TMC_write_move_angle(128);
+  //HAL_Delay(20000);
+  //TMC_write_move_angle(0);
 
 
 /*
@@ -256,7 +252,9 @@ int main(void)
   //cc value is set to 16k which should toggle pin every 500us
   //ARR register is set to 64k overflow sould happen every 2ms if cnt is not cleared
   //TIM1_CC_IRQHandler(void) generated function is in stm32wbxx_it.c
-  TIM1->CCR1 = 16000;
+  //TIM1->CCR1 = 16000;
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  //HAL_TIM_PeriodElapsedCallback(&htim1);
   //---------------------------------------------------------
   /*while (1){
   		HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
@@ -321,6 +319,8 @@ int main(void)
     MX_APPE_Process();
 
     /* USER CODE BEGIN 3 */
+    //HAL_Delay(1000);
+    //HAL_GPIO_TogglePin(ENN_GPIO_Port, ENN_Pin);
 
   }
   /* USER CODE END 3 */
@@ -487,40 +487,6 @@ static void MX_IPCC_Init(void)
 }
 
 /**
-  * @brief LPTIM1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_LPTIM1_Init(void)
-{
-
-  /* USER CODE BEGIN LPTIM1_Init 0 */
-
-  /* USER CODE END LPTIM1_Init 0 */
-
-  /* USER CODE BEGIN LPTIM1_Init 1 */
-
-  /* USER CODE END LPTIM1_Init 1 */
-  hlptim1.Instance = LPTIM1;
-  hlptim1.Init.Clock.Source = LPTIM_CLOCKSOURCE_APBCLOCK_LPOSC;
-  hlptim1.Init.Clock.Prescaler = LPTIM_PRESCALER_DIV32;
-  hlptim1.Init.Trigger.Source = LPTIM_TRIGSOURCE_SOFTWARE;
-  hlptim1.Init.OutputPolarity = LPTIM_OUTPUTPOLARITY_HIGH;
-  hlptim1.Init.UpdateMode = LPTIM_UPDATE_IMMEDIATE;
-  hlptim1.Init.CounterSource = LPTIM_COUNTERSOURCE_INTERNAL;
-  hlptim1.Init.Input1Source = LPTIM_INPUT1SOURCE_GPIO;
-  hlptim1.Init.Input2Source = LPTIM_INPUT2SOURCE_GPIO;
-  if (HAL_LPTIM_Init(&hlptim1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN LPTIM1_Init 2 */
-
-  /* USER CODE END LPTIM1_Init 2 */
-
-}
-
-/**
   * @brief LPUART1 Initialization Function
   * @param None
   * @retval None
@@ -653,10 +619,10 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 64000;
+  htim1.Init.Period = 32000;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
-  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
