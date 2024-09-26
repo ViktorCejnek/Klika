@@ -224,24 +224,7 @@ int main(void)
   HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, 0);
   HAL_Delay(1000);
 
-  //TMC_write_move_angle(128);
-  //HAL_Delay(20000);
-  //TMC_write_move_angle(0);
 
-
-/*
-  TMC_read(REG_CHOPCONF);
-  HAL_Delay(100);
-
-  TMC_read(REG_GCONF);
-  HAL_Delay(100);
-
-  HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_RESET);
-
-  HAL_Delay(1000);
-  TMC_turn(720);
-  //TMC_write_move_angle(0);	//temporary
-*/
   //---------------------------------------------------------
   //**NEW CODE ADDED**
   //---------------------------------------------------------
@@ -252,42 +235,18 @@ int main(void)
   //cc value is set to 16k which should toggle pin every 500us
   //ARR register is set to 64k overflow sould happen every 2ms if cnt is not cleared
   //TIM1_CC_IRQHandler(void) generated function is in stm32wbxx_it.c
-  //TIM1->CCR1 = 16000;
-  //HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+
   //timer initialization
   TIM1->CR1 |= TIM_CR1_CEN;		//timer enable
   TIM1->DIER |= TIM_DIER_UIE;
   TIM1->DIER |= TIM_DIER_CC1IE;
-  //HAL_TIM_PeriodElapsedCallback(&htim1);
+  //change ccr1 register and therefore change rotation speed of motor
+  TIM1->CCR1 = 200;
   //---------------------------------------------------------
-  /*while (1){
-  		HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
-  		//HAL_Delay(2);
-  		delay_us(500);
-  		//sgresult = TMC_read(REG_SG_RESULT);
-  		HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
-  		//HAL_Delay(2);
-  		delay_us(500);
-  		//sgresult = TMC_read(REG_SG_RESULT);
-  }*/
-/*
-  for (int i = 0; i < 10000; ++i) {
-	HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
-	//gstat = TMC_read(REG_IOIN);
-	delay_us(100);
-	HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
-	delay_us(100);
-	//delay_us(25);
-
-	sgresult = TMC_read(REG_SG_RESULT);
-	delay_us(25);
-	tstep = TMC_read(REG_TSTEP);
-	delay_us(25);
-	gstat = TMC_read(REG_IOIN);
-	delay_us(25);
+  while (1){
+  		sgresult = TMC_read(REG_SG_RESULT);
   }
-
-
+/*
   //HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_SET);
 
   	  	  	  //execute automatic tuning procedure AT
@@ -304,11 +263,6 @@ int main(void)
   HAL_Delay(10);
   TMC_read(REG_DRVSTATUS);							//read out the state of TMC2209
   HAL_Delay(10);*/
-
-
-
-
-
 
   /* USER CODE END 2 */
 
