@@ -71,6 +71,7 @@ static void MX_RF_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+uint32_t sgresult_shifted = 0;
 uint32_t sgresult = 0;
 uint32_t tstep = 0;
 uint32_t gstat = 0;
@@ -121,14 +122,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 
-
   TMC_UART = &hlpuart1;
-
-  //HAL_TIM_Base_Start(&htim1);
-  /*HAL_TIM_PeriodElapsedCallback(&hlptim1);
-  HAL_TIM_PWM_Init(&hlptim1);
-  HAL_LPTIM_PWM_Start(&hlptim1, Period, Pulse);
-  HAL_TIM_PWM_ConfigChannel(htim, sConfig, Channel);*/
 
 
   HAL_GPIO_WritePin(MS1_GPIO_Port, MS1_Pin, GPIO_PIN_RESET);
@@ -166,16 +160,17 @@ int main(void)
   //------------------------------------------------------------------------------------------
   TMC_write_bit(REG_CHOPCONF, REG_vsense, 1);			//1 = use VSENSE (lower current)
   HAL_Delay(10);
-  TMC_write_bit(REG_CHOPCONF, REG_intpol, 1);
+  TMC_write_bit(REG_CHOPCONF, REG_intpol, 1);			//The actual microstep resolution (MRES) becomes extrapolated to 256 microsteps
   HAL_Delay(10);
-  TMC_write_bit(REG_CHOPCONF, REG_mres3, 1);			//%0000 … 256
+  TMC_write_bit(REG_CHOPCONF, REG_mres3, 0);			//%0000 … 256
   HAL_Delay(10);										//%0001 … %1000:
-  TMC_write_bit(REG_CHOPCONF, REG_mres3, 0);			//128, 64, 32, 16, 8, 4, 2, FULLSTEP
+  TMC_write_bit(REG_CHOPCONF, REG_mres2, 0);			//128, 64, 32, 16, 8, 4, 2, FULLSTEP
   HAL_Delay(10);
-  TMC_write_bit(REG_CHOPCONF, REG_mres3, 0);
+  TMC_write_bit(REG_CHOPCONF, REG_mres1, 0);
   HAL_Delay(10);
-  TMC_write_bit(REG_CHOPCONF, REG_mres3, 0);
+  TMC_write_bit(REG_CHOPCONF, REG_mres0, 1);
   HAL_Delay(10);
+
 
   TMC_write_word(REG_CHOPCONF, REG_toff, 5);	  	  	//CHOPCONF set basic setting e.g.: TOFF=5, TBL=2, HSTART=4, HEND=0
   HAL_Delay(10);
@@ -221,31 +216,33 @@ int main(void)
   HAL_Delay(10);
 
 
-  HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, 0);
-  HAL_Delay(1000);
-
-
   //---------------------------------------------------------
   //**NEW CODE ADDED**
   //---------------------------------------------------------
-  //Set this register value to change capture compare value
-  //in cc interrupt the cnt value is set to 0
-  //you can add timer overflow interrupt and check for error
-  //TIM1 has prescaler 0 which means freq is 32MHz
-  //cc value is set to 16k which should toggle pin every 500us
-  //ARR register is set to 64k overflow sould happen every 2ms if cnt is not cleared
   //TIM1_CC_IRQHandler(void) generated function is in stm32wbxx_it.c
 
   //timer initialization
   TIM1->CR1 |= TIM_CR1_CEN;		//timer enable
   TIM1->DIER |= TIM_DIER_UIE;
   TIM1->DIER |= TIM_DIER_CC1IE;
+
   //change ccr1 register and therefore change rotation speed of motor
   TIM1->CCR1 = 200;
   //---------------------------------------------------------
+  HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, 0);
+
+  //---------------------------------------------------------
+  //**test loop for stallguard threshold**
+  //---------------------------------------------------------
   while (1){
-  		sgresult = TMC_read(REG_SG_RESULT);
+	  sgresult = TMC_read(REG_SG_RESULT);		//use Live Expressions
+	  sgresult_shifted = (sgresult>>25) | ( (( (sgresult>>16) )&0x1) <<7);
+	  //HAL_Delay(10);
   }
+  //---------------------------------------------------------
+
+
+
 /*
   //HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_SET);
 
@@ -257,12 +254,7 @@ int main(void)
 
   	  	  	  //continue with SC2
 
-  TMC_read(REG_DRVSTATUS);							//read out the state of TMC2209
-  HAL_Delay(10);
-  TMC_read(REG_CHOPCONF);							//read out the chopconf of TMC2209
-  HAL_Delay(10);
-  TMC_read(REG_DRVSTATUS);							//read out the state of TMC2209
-  HAL_Delay(10);*/
+*/
 
   /* USER CODE END 2 */
 
@@ -281,8 +273,6 @@ int main(void)
     //change ccr1 register and therefore change rotation speed of motor
     TIM1->CCR1 = 200;
 
-    //HAL_Delay(1000);
-    //HAL_GPIO_TogglePin(ENN_GPIO_Port, ENN_Pin);
 
   }
   /* USER CODE END 3 */
