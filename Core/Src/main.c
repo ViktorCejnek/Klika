@@ -195,7 +195,7 @@ int main(void)
   //------------------------------------------------------------------------------------------
   //	Velocity Dependent Control
   //------------------------------------------------------------------------------------------
-  TMC_write_IHOLD_IRUN(10, 10, 4);						//setup IHOLD, IRUN and I_HOLD_DELAY
+  TMC_write_IHOLD_IRUN(1, 1, 4);						//setup IHOLD, IRUN and I_HOLD_DELAY
   HAL_Delay(10);
   TMC_write_bit(REG_TPWMTHRS, REG_tpwmthrs_val, 0);		//disable TPWMTHRS e.g. no switching to spreadcycle
   HAL_Delay(10);
@@ -216,6 +216,16 @@ int main(void)
   HAL_Delay(10);
 
 
+  //------------------------------------------------------------------------------------------
+  //	SGTHRS
+  //------------------------------------------------------------------------------------------
+  TMC_write_bit(REG_SGTHRS, 1<<31, 1);		//set SGTHRS 40*2 = 80
+  HAL_Delay(10);
+  TMC_write_bit(REG_SGTHRS, 1<<31, 1);		//set SGTHRS 40*2 = 80
+  HAL_Delay(10);
+
+
+
   //---------------------------------------------------------
   //**NEW CODE ADDED**
   //---------------------------------------------------------
@@ -227,7 +237,7 @@ int main(void)
   TIM1->DIER |= TIM_DIER_CC1IE;
 
   //change ccr1 register and therefore change rotation speed of motor
-  TIM1->CCR1 = 200;
+  TIM1->CCR1 = 100;
   //---------------------------------------------------------
   HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, 0);
 
@@ -267,7 +277,6 @@ int main(void)
   {
     /* USER CODE END WHILE */
     MX_APPE_Process();
-
 
     /* USER CODE BEGIN 3 */
     //change ccr1 register and therefore change rotation speed of motor
@@ -671,11 +680,21 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : INDEX_Pin DIAG_Pin */
-  GPIO_InitStruct.Pin = INDEX_Pin|DIAG_Pin;
+  /*Configure GPIO pin : INDEX_Pin */
+  GPIO_InitStruct.Pin = INDEX_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(INDEX_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : DIAG_Pin */
+  GPIO_InitStruct.Pin = DIAG_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(DIAG_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 4, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

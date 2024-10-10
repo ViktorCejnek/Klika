@@ -88,6 +88,7 @@ void Error_Handler(void);
 #define INDEX_GPIO_Port GPIOB
 #define DIAG_Pin GPIO_PIN_7
 #define DIAG_GPIO_Port GPIOB
+#define DIAG_EXTI_IRQn EXTI9_5_IRQn
 
 /* USER CODE BEGIN Private defines */
 void delay_us (uint16_t us);
