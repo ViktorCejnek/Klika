@@ -9,32 +9,19 @@
 #include "TMC2009_UART.h"
 #include "stm32wbxx_hal.h"
 #include <math.h>
+#include "rev.h"
 
 
 UART_HandleTypeDef *TMC_UART;
 
-//uint8_t m_UART_rFrame[4] = {0x05, 0x00, 0x06, 0x48};
-//uint8_t m_UART_wFrame[8] = {0x05, 0x00, 0x00, 0x12, 0x3E, 0x74 , 0x2E, 0x00};
+uint8_t crc_32(uint32_t data);
+uint8_t crc_64(uint64_t data);
+
 uint16_t m_UART_communication_pause = 52083; // int(500/baudrate*1000000)
 uint16_t m_UART_communication_timeout = 2083; // int(20000/baudrate*1000)
 
 void TMC_turn (int16_t angle){
-	if (angle<0) {
-		angle = -1*angle;
-		HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, GPIO_PIN_SET);
-	} else {
-		HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, GPIO_PIN_RESET);
-	}
-	uint64_t Num_of_steps = 2*200*8*angle/360*32/16;
 
-	while (Num_of_steps--){
-		HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
-		//HAL_Delay(2);
-		delay_us(100);
-		HAL_GPIO_TogglePin(STEP_GPIO_Port, STEP_Pin);
-		//HAL_Delay(2);
-		delay_us(100);
-	}
 }
 
 
@@ -44,18 +31,7 @@ uint32_t TMC_read (uint8_t reg_address){
 	UART_read.sync = REG_SYNC;
 	UART_read.register_address = reg_address;
 
-	uint8_t crc = 0;
-	uint64_t byte = UART_read.bytes;
-	crc = 0;
-	for (int i = 0; i < 24; ++i) {
-		if((crc >> 7) ^ (byte & 0x01)) {
-			crc = ((crc << 1) ^ 0x07) & 0xFFFFFF;
-		} else {
-			crc = (crc << 1) & 0xFFFFFF;
-		}
-		byte = byte >> 1;
-	}
-	UART_read.crc = crc;
+	UART_read.crc = crc_32(UART_read.bytes);
 
 
 	HAL_HalfDuplex_EnableTransmitter(TMC_UART);
@@ -64,18 +40,11 @@ uint32_t TMC_read (uint8_t reg_address){
 	HAL_HalfDuplex_EnableReceiver(TMC_UART);
 	HAL_UART_Receive(TMC_UART, (uint8_t *)&UART_response, 8, m_UART_communication_timeout);
 
-	byte = (UART_response.bytes & 0x00FFFFFFFFFFFFFF);
-	crc = 0;
-	for (int i = 0; i < 56; ++i) {
-		if((crc >> 7) ^ (byte & 0x01)) {
-			crc = ((crc << 1) ^ 0x07) & 0xFFFFFFFFFFFFFFFF;
-		} else {
-			crc = (crc << 1) & 0xFFFFFFFFFFFFFFFF;
-		}
-		byte = byte >> 1;
-	}
 
-	return UART_response.data;
+	if(UART_response.crc == crc_64(UART_response.bytes))
+		return rev(UART_response.data);		//return the read data in readable format
+	else
+		return 0;
 }
 
 
@@ -235,6 +204,7 @@ uint32_t TMC_write_IHOLD_IRUN(uint8_t IHOLD, uint8_t IRUN, uint8_t IHOLDDELAY){
 		UART_write.register_address = REG_IHOLD_IRUN + 0x80;
 		UART_write.data = IHOLD << 24 | IRUN << 16 | IHOLDDELAY << 8;
 
+		/*
 		uint8_t crc = 0;
 		uint32_t byte = (UART_write.bytes & 0x00FFFFFFFFFFFFFF);
 
@@ -247,9 +217,13 @@ uint32_t TMC_write_IHOLD_IRUN(uint8_t IHOLD, uint8_t IRUN, uint8_t IHOLDDELAY){
 			byte = byte >> 1;
 		}
 		UART_write.crc = crc;
+		*/
+
+		UART_write.crc = crc_64(UART_write.bytes);
 
 		HAL_HalfDuplex_EnableTransmitter(TMC_UART);
 		HAL_UART_Transmit(TMC_UART, (uint8_t *)&UART_write, 8, m_UART_communication_timeout);
+
 
 		return UART_write.data;
 	} else {
@@ -315,4 +289,34 @@ uint32_t TMC_write_stop(void){
 	HAL_UART_Transmit(TMC_UART, (uint8_t *)&UART_write, 8, m_UART_communication_timeout);
 
 	return UART_write.data;
+}
+
+uint8_t crc_32(uint32_t data){
+	uint8_t crc = 0;
+	data = data&0x00FFFFFF;
+	for (int i = 0; i < 24; ++i) {
+		if((crc >> 7) ^ (data & 0x01)) {
+			crc = ((crc << 1) ^ 0x07) & 0xFFFFFF;
+		} else {
+			crc = (crc << 1) & 0xFFFFFF;
+		}
+		data = data >> 1;
+	}
+
+	return crc;
+}
+
+uint8_t crc_64(uint64_t data){
+	uint8_t crc = 0;
+	data = data & 0x00FFFFFFFFFFFFFF;
+
+	for (int i = 0; i < 56; ++i) {
+		if((crc >> 7) ^ (data & 0x01)) {
+			crc = ((crc << 1) ^ 0x07) & 0xFFFFFFFFFFFFFFFF;
+		} else {
+			crc = (crc << 1) & 0xFFFFFFFFFFFFFFFF;
+		}
+		data = data >> 1;
+	}
+	return crc;
 }

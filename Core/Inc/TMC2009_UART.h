@@ -18,6 +18,7 @@ uint32_t TMC_write_IHOLD_IRUN(uint8_t IHOLD, uint8_t IRUN, uint8_t IHOLDDELAY);
 uint32_t TMC_write_stop(void);
 uint32_t TMC_write_move_angle(uint32_t angle);
 
+
 typedef union
 {
   struct
@@ -35,10 +36,10 @@ typedef union
 {
   struct
   {
-    uint32_t sync : 8;
-    uint32_t serial_address : 8;
-    uint32_t register_address : 8;
-    uint32_t crc : 8;
+	uint32_t sync : 8;
+	uint32_t serial_address : 8;
+	uint32_t register_address : 8;
+	uint32_t crc : 8;
   };
   uint32_t bytes;
 } read_request_datagram_t;

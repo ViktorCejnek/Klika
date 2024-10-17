@@ -22,7 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "TMC2009_UART.h"
-
+#include "rev.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -127,10 +127,24 @@ int main(void)
 
   HAL_GPIO_WritePin(MS1_GPIO_Port, MS1_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(MS2_GPIO_Port, MS2_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(STEP_GPIO_Port, STEP_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(SPREAD_GPIO_Port, SPREAD_Pin, GPIO_PIN_RESET);
+
+  //////////////////////////////////////////////////////////////////
+  //testing of UART comunication
+  //////////////////////////////////////////////////////////////////
+
+
+  uint32_t test = 0x01234567;
+  test = rev(0x01234567);
+  uint64_t test2 = (uint64_t)test<<32 | 0x89abcdef;
+  test2 = rev64(test2);
+
+  test = TMC_read(REG_GCONF);
+  test = TMC_read(REG_IOIN);
+
 
   //------------------------------------------------------------------------------------------
   //	setup sequence:
