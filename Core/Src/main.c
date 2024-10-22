@@ -144,6 +144,10 @@ int main(void)
 
   test = TMC_read(REG_GCONF);
   test = TMC_read(REG_IOIN);
+  TMC_write_IHOLD_IRUN(16, 20, 4);
+  HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_RESET);
+
+
 
 
   //------------------------------------------------------------------------------------------
@@ -157,45 +161,33 @@ int main(void)
   //	GCONF
   //------------------------------------------------------------------------------------------
   TMC_write_bit(REG_GCONF, REG_pdn_disable, 1);			//1 = disable Power down input/enable UART
-  HAL_Delay(10);
   TMC_write_bit(REG_GCONF, REG_i_scale_analog, 0);		//0 = disable external Vref
-  HAL_Delay(10);
   TMC_write_bit(REG_GCONF, REG_en_spreadcycle, 0);		//0 = clear en_spreadcycle in GCONF
-  HAL_Delay(10);
   TMC_write_bit(REG_GCONF, REG_internal_rsense, 0);		//0 = use external Rsense
-  HAL_Delay(10);
   TMC_write_bit(REG_GCONF, REG_mstep_reg_select, 1);	//1 = use value from MSTEP register
-  HAL_Delay(10);
   TMC_write_bit(REG_GCONF, REG_multistep_filt, 1);		//1 = software pulse filtering
-  HAL_Delay(10);
 
   //------------------------------------------------------------------------------------------
   //	CHOPCONF
   //------------------------------------------------------------------------------------------
   TMC_write_bit(REG_CHOPCONF, REG_vsense, 1);			//1 = use VSENSE (lower current)
-  HAL_Delay(10);
   TMC_write_bit(REG_CHOPCONF, REG_intpol, 1);			//The actual microstep resolution (MRES) becomes extrapolated to 256 microsteps
-  HAL_Delay(10);
-  TMC_write_bit(REG_CHOPCONF, REG_mres3, 0);			//%0000 … 256
-  HAL_Delay(10);										//%0001 … %1000:
-  TMC_write_bit(REG_CHOPCONF, REG_mres2, 0);			//128, 64, 32, 16, 8, 4, 2, FULLSTEP
-  HAL_Delay(10);
-  TMC_write_bit(REG_CHOPCONF, REG_mres1, 0);
-  HAL_Delay(10);
-  TMC_write_bit(REG_CHOPCONF, REG_mres0, 1);
-  HAL_Delay(10);
-
+  TMC_write_bit(REG_CHOPCONF, REG_msres3, 0);			//%0000 … 256
+  TMC_write_bit(REG_CHOPCONF, REG_msres2, 0);			//128, 64, 32, 16, 8, 4, 2, FULLSTEP
+  TMC_write_bit(REG_CHOPCONF, REG_msres1, 0);
+  TMC_write_bit(REG_CHOPCONF, REG_msres0, 1);
 
   TMC_write_word(REG_CHOPCONF, REG_toff, 5);	  	  	//CHOPCONF set basic setting e.g.: TOFF=5, TBL=2, HSTART=4, HEND=0
-  HAL_Delay(10);
 
+  /*
   TMC_write_bit(REG_CHOPCONF, REG_tbl1, 0);
   HAL_Delay(10);
   TMC_write_bit(REG_CHOPCONF, REG_tbl0, 1);
   HAL_Delay(10);
-  TMC_write_word(REG_CHOPCONF, REG_hstrt, 3);			//value = xvalue - 1
-  HAL_Delay(10);
 
+  TMC_write_word(REG_CHOPCONF, REG_hstrt, 3);			//value = xvalue - 1
+  HAL_Delay(10);*/
+/*
   TMC_write_bit(REG_CHOPCONF, REG_hend3, 1);
   HAL_Delay(10);
   TMC_write_bit(REG_CHOPCONF, REG_hend2, 0);
@@ -204,12 +196,12 @@ int main(void)
   HAL_Delay(10);
   TMC_write_bit(REG_CHOPCONF, REG_hend0, 1);
   HAL_Delay(10);
-
+*/
 
   //------------------------------------------------------------------------------------------
   //	Velocity Dependent Control
   //------------------------------------------------------------------------------------------
-  TMC_write_IHOLD_IRUN(1, 1, 4);						//setup IHOLD, IRUN and I_HOLD_DELAY
+  TMC_write_IHOLD_IRUN(15, 20, 4);						//setup IHOLD, IRUN and I_HOLD_DELAY
   HAL_Delay(10);
   TMC_write_bit(REG_TPWMTHRS, REG_tpwmthrs_val, 0);		//disable TPWMTHRS e.g. no switching to spreadcycle
   HAL_Delay(10);
@@ -220,23 +212,19 @@ int main(void)
   //	PWMCONF
   //------------------------------------------------------------------------------------------
   TMC_write_bit(REG_PWMCONF, REG_pwm_autoscale, 1);		//set pwm_autoscale and pwm_autograd in PWMCONF
-  HAL_Delay(10);
   TMC_write_bit(REG_PWMCONF, REG_pwm_autograd, 1);
-  HAL_Delay(10);
 
   TMC_write_bit(REG_PWMCONF, REG_pwm_freq0, 0);			//select PWM_FREQ in PWMCONF
-  HAL_Delay(10);
   TMC_write_bit(REG_PWMCONF, REG_pwm_freq1, 1);
-  HAL_Delay(10);
 
-
+/*
   //------------------------------------------------------------------------------------------
   //	SGTHRS
   //------------------------------------------------------------------------------------------
   TMC_write_bit(REG_SGTHRS, 1<<31, 1);		//set SGTHRS 40*2 = 80
   HAL_Delay(10);
   TMC_write_bit(REG_SGTHRS, 1<<31, 1);		//set SGTHRS 40*2 = 80
-  HAL_Delay(10);
+  HAL_Delay(10);*/
 
 
 
@@ -251,16 +239,16 @@ int main(void)
   TIM1->DIER |= TIM_DIER_CC1IE;
 
   //change ccr1 register and therefore change rotation speed of motor
-  TIM1->CCR1 = 100;
+  TIM1->CCR1 = 500;
   //---------------------------------------------------------
-  HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, 0);
+  HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, RESET);
 
   //---------------------------------------------------------
   //**test loop for stallguard threshold**
   //---------------------------------------------------------
   while (1){
-	  sgresult = TMC_read(REG_SG_RESULT);		//use Live Expressions
-	  sgresult_shifted = (sgresult>>25) | ( (( (sgresult>>16) )&0x1) <<7);
+	  //sgresult = TMC_read(REG_SG_RESULT);		//use Live Expressions
+	  //sgresult_shifted = (sgresult>>25) | ( (( (sgresult>>16) )&0x1) <<7);
 	  //HAL_Delay(10);
   }
   //---------------------------------------------------------

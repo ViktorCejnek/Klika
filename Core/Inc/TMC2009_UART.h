@@ -62,24 +62,29 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 #define REG_OFFSET				0x80
 
 // addresses
-#define REG_GCONF           	0x00
-#define REG_GSTAT           	0x01
-#define REG_IFCNT           	0x02
-#define REG_IOIN            	0x06
-#define REG_IHOLD_IRUN      	0x10
-#define REG_TSTEP           	0x12
-#define REG_TPWMTHRS			0x13
-#define REG_TCOOLTHRS       	0x14
-#define REG_VACTUAL				0x22
-#define REG_SGTHRS          	0x40
-#define REG_SG_RESULT       	0x41
-#define REG_MSCNT          		0x6A
-#define REG_CHOPCONF        	0x6C
-#define REG_DRVSTATUS       	0x6F
-#define REG_PWMCONF				0x70
+#define REG_GCONF           	0x00	//RW
+#define REG_GSTAT           	0x01	//R+WC
+#define REG_IFCNT           	0x02	//R
+#define REG_IOIN            	0x06	//R
+#define REG_IHOLD_IRUN      	0x10	//W
+#define REG_TPOWERDOWN			0x11	//W
+#define REG_TSTEP           	0x12	//R
+#define REG_TPWMTHRS			0x13	//W
+#define REG_TCOOLTHRS       	0x14	//W
+#define REG_VACTUAL				0x22	//W
+#define REG_SGTHRS          	0x40	//W
+#define REG_SG_RESULT       	0x41	//R
+#define REG_COOLCONF			0x42	//W
+#define REG_MSCNT          		0x6A	//R
+#define REG_MSCURACT			0x6B	//R
+#define REG_CHOPCONF        	0x6C	//RW
+#define REG_DRVSTATUS       	0x6F	//R
+#define REG_PWMCONF				0x70	//RW
+#define REG_PWM_SCALE			0x71	//R
+#define REG_PWM_AUTO			0x72	//R
 
 
-/*
+
 // GCONF
 #define REG_i_scale_analog      1<<0
 #define REG_internal_rsense     1<<1
@@ -89,6 +94,7 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 #define REG_index_step          1<<5
 #define REG_pdn_disable			1<<6
 #define REG_mstep_reg_select    1<<7
+#define REG_multistep_filt		1<<8
 
 // GSTAT
 #define REG_reset               1<<0
@@ -96,12 +102,19 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 #define REG_uv_cp               1<<2
 
 // CHOPCONF
+#define REG_toff				15<<0
+#define REG_hstrt				7<<4
+#define REG_hend				15<<7
+#define REG_tbl					3<<15
 #define REG_vsense              1<<17
+#define REG_msres				15<<24
 #define REG_msres0              1<<24
 #define REG_msres1              1<<25
 #define REG_msres2              1<<26
 #define REG_msres3              1<<27
 #define REG_intpol              1<<28
+#define REG_dedge				1<<29
+
 
 // IOIN
 #define REG_io_enn              1<<0
@@ -134,6 +147,12 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 // SGTHRS
 #define REG_sgthrs              255<<0
 
+// TPWMTHRS - 20 bits
+#define REG_tpwmthrs_val		0xFFFFF<<0
+
+// VACTUAL - 24 bits
+#define REG_vactual_val			0xFFFFFF<<0
+
 // others
 #define REG_mres_256 			0
 #define REG_mres_128 			1
@@ -144,12 +163,29 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 #define REG_mres_4 				6
 #define REG_mres_2 				7
 #define REG_mres_1 				8
-*/
+
+// PWMCONF
+#define REG_PWM_LIM				15<<28
+#define REG_PWM_REG				15<<24
+#define REG_freewheel1			1<<21
+#define REG_freewheel0			1<<20
+#define REG_freewheel			3<<20
+#define REG_pwm_autograd		1<<19
+#define REG_pwm_autoscale		1<<18
+#define REG_pwm_freq1			1<<17
+#define REG_pwm_freq0			1<<16
+#define REG_pwm_freq			3<<16
+#define REG_PWM_GRAD			255<<8
+#define REG_PWM_OFS				255<<0
+
 
 // Datasheet vs Actual mask position
 //  7  6  5  4  3  2  1  0		15 14 13 12 11 10  9  8		23 22 21 20 19 18 17 16		31 30 29 28 27 26 25 24
 // 31 30 29 28 27 26 25 24		23 22 21 20 19 18 17 16		15 14 13 12 11 10  9  8		 7  6  5  4  3  2  1  0
 
+
+
+/*
 // GCONF
 #define REG_i_scale_analog      1<<24	//e.g. bit 0 translates to bit 24
 #define REG_internal_rsense     1<<25
@@ -201,7 +237,7 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 #define REG_io_dir              1<<17
 
 // DRVSTATUS
-/*#define REG_stst                1<<31
+#define REG_stst                1<<31
 #define REG_stealth             1<<30
 #define REG_cs_actual           31<<16
 #define REG_t157                1<<11
@@ -215,7 +251,7 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 #define REG_s2gb                1<<3
 #define REG_s2ga                1<<2
 #define REG_ot                  1<<1
-#define REG_otpw                1<<0*/
+#define REG_otpw                1<<0
 
 // IHOLD_IRUN
 #define REG_ihold               31<<24
@@ -229,6 +265,6 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 #define REG_tpwmthrs_val		0xFFFFF<<8
 
 // VACTUAL - 24 bits
-#define REG_vactual_val			0xFFFFFF<<8
+#define REG_vactual_val			0xFFFFFF<<8*/
 
 #endif /* INC_TMC2009_UART_H_ */
