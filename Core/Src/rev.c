@@ -1,5 +1,6 @@
-/*
- * rev.c
+/**
+ * @file rev.c
+ * @brief Utilizes REV and RBIT functions
  *
  *  Created on: Oct 17, 2024
  *      Author: Viktor Cejnek
@@ -8,18 +9,18 @@
 #include "rev.h"
 #include <arm_acle.h>
 
-uint32_t rev(uint32_t value){
-	value = __REV(value); // Generates the REV instruction
-	return value;
-}
-
 uint32_t rev16(uint32_t value){
 	value = __REV16(value); // Generates the REV16 instruction
 	return value;
 }
 
+uint32_t rev32(uint32_t value){
+	value = __REV(value); // Generates the REV instruction
+	return value;
+}
+
 uint64_t rev64(uint64_t value){
-	return (uint64_t)rev(value & 0xffffffff)<<32 | rev(value>>32);
+	return (uint64_t)rev32(value & 0xffffffff)<<32 | rev32(value>>32);
 }
 
 uint32_t revsh(uint32_t value) {

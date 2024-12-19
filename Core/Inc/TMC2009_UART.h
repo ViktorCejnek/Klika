@@ -1,5 +1,5 @@
-/*
- * TMC2009_UART.h
+/**
+ * @file TMC2009_UART.h
  *
  *  Created on: May 6, 2024
  *      Author: Viktor Cejnek
@@ -59,7 +59,7 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 #define REG_SYNC				0x05
 
 // ADDR write offset
-#define REG_OFFSET				0x80
+#define REG_WRITE				0x80
 
 // Registers
 // 	General Registers
@@ -120,7 +120,7 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 // OTP_PROG		0x04	16bits	W
 #define MASK_OTPBIT				7<<0
 #define MASK_OTPBYTE			3<<4
-#define MASK_OTPBIT				255<<8
+#define MASK_OTPMAGIC			255<<8
 
 // OTP_READ		0x05	24bits	R
 #define MASK_OTP0				255<<0
@@ -257,6 +257,46 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 #define TMC_mres_4 				6
 #define TMC_mres_2 				7
 #define TMC_mres_1 				8
+
+
+
+// Filter registers to R, RW and W
+#define R	0x1
+#define W	0x2
+#define RW	0x3
+
+static const uint8_t register_filter[][2]={
+		{REG_GCONF,		RW},
+		{REG_GSTAT, 	R},
+		{REG_GSTAT, 	RW},
+		{REG_SLAVECONF,	W},
+		{REG_OTP_PROG,	W},
+		{REG_OTP_READ,	R},
+		{REG_IOIN,		R},
+		{FACTORY_CONF,	RW},
+
+		{REG_IHOLD_IRUN,W},
+		{REG_TPOWERDOWN,W},
+		{REG_TSTEP,		R},
+		{REG_TPWMTHRS,	W},
+		{REG_VACTUAL,	W},
+
+		{REG_TCOOLTHRS,	W},
+		{REG_SGTHRS,	W},
+		{REG_SG_RESULT,	R},
+		{REG_COOLCONF,	W},
+
+		{REG_MSCNT,		R},
+		{REG_MSCURACT,	R},
+
+		{REG_CHOPCONF,	RW},
+		{REG_DRVSTATUS,	R},
+		{REG_PWMCONF,	RW},
+		{REG_PWM_SCALE,	R},
+		{REG_PWM_AUTO,	R}
+};
+
+
 
 // Datasheet vs Actual mask position
 //  7  6  5  4  3  2  1  0		15 14 13 12 11 10  9  8		23 22 21 20 19 18 17 16		31 30 29 28 27 26 25 24

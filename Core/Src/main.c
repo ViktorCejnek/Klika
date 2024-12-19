@@ -133,51 +133,55 @@ int main(void)
   HAL_GPIO_WritePin(SPREAD_GPIO_Port, SPREAD_Pin, GPIO_PIN_RESET);
 
   //////////////////////////////////////////////////////////////////
-  //testing of UART comunication
+  /// Testing of UART communication
   //////////////////////////////////////////////////////////////////
 
 
   uint32_t test = 0x01234567;
-  test = rev(0x01234567);
+  test = rev32(0x01234567);
   uint64_t test2 = (uint64_t)test<<32 | 0x89abcdef;
   test2 = rev64(test2);
 
   test = TMC_read(REG_GCONF);
   test = TMC_read(REG_IOIN);
-  TMC_write_IHOLD_IRUN(16, 20, 4);
+  TMC_write_IHOLD_IRUN(16, 15, 4);
   HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_RESET);
 
+  uint32_t before = 0;
+  uint32_t after = 0;
 
 
-
-  //------------------------------------------------------------------------------------------
-  //	setup sequence:
-  //------------------------------------------------------------------------------------------
-
+  ///------------------------------------------------------------------------------------------
+  ///	Setup sequence:
+  ///------------------------------------------------------------------------------------------
   TMC_read(REG_DRVSTATUS);								//read out the state of TMC2209
   HAL_Delay(10);
 
-  //------------------------------------------------------------------------------------------
-  //	GCONF
-  //------------------------------------------------------------------------------------------
-  TMC_write_bit(REG_GCONF, REG_pdn_disable, 1);			//1 = disable Power down input/enable UART
-  TMC_write_bit(REG_GCONF, REG_i_scale_analog, 0);		//0 = disable external Vref
-  TMC_write_bit(REG_GCONF, REG_en_spreadcycle, 0);		//0 = clear en_spreadcycle in GCONF
-  TMC_write_bit(REG_GCONF, REG_internal_rsense, 0);		//0 = use external Rsense
-  TMC_write_bit(REG_GCONF, REG_mstep_reg_select, 1);	//1 = use value from MSTEP register
-  TMC_write_bit(REG_GCONF, REG_multistep_filt, 1);		//1 = software pulse filtering
+  ///------------------------------------------------------------------------------------------
+  ///	GCONF
+  ///------------------------------------------------------------------------------------------
+  before = TMC_read(REG_GCONF);
+  TMC_write_bit(REG_GCONF, MASK_pdn_disable, 1);		//1 = disable Power down input/enable UART
+  TMC_write_bit(REG_GCONF, MASK_i_scale_analog, 0);		//0 = disable external Vref
+  TMC_write_bit(REG_GCONF, MASK_en_spreadcycle, 0);		//0 = clear en_spreadcycle in GCONF
+  TMC_write_bit(REG_GCONF, MASK_internal_rsense, 0);	//0 = use external Rsense
+  TMC_write_bit(REG_GCONF, MASK_mstep_reg_select, 1);	//1 = use value from MSTEP register
+  TMC_write_bit(REG_GCONF, MASK_multistep_filt, 1);		//1 = software pulse filtering
+  after = TMC_read(REG_GCONF);
 
   //------------------------------------------------------------------------------------------
   //	CHOPCONF
   //------------------------------------------------------------------------------------------
-  TMC_write_bit(REG_CHOPCONF, REG_vsense, 1);			//1 = use VSENSE (lower current)
-  TMC_write_bit(REG_CHOPCONF, REG_intpol, 1);			//The actual microstep resolution (MRES) becomes extrapolated to 256 microsteps
-  TMC_write_bit(REG_CHOPCONF, REG_msres3, 0);			//%0000 … 256
-  TMC_write_bit(REG_CHOPCONF, REG_msres2, 0);			//128, 64, 32, 16, 8, 4, 2, FULLSTEP
-  TMC_write_bit(REG_CHOPCONF, REG_msres1, 0);
-  TMC_write_bit(REG_CHOPCONF, REG_msres0, 1);
+  before = TMC_read(REG_CHOPCONF);
+  TMC_write_bit(REG_CHOPCONF, MASK_vsense, 1);			//1 = use VSENSE (lower current)
+  TMC_write_bit(REG_CHOPCONF, MASK_intpol, 1);			//The actual microstep resolution (MRES) becomes extrapolated to 256 microsteps
+  TMC_write_bit(REG_CHOPCONF, MASK_msres3, 0);			//%0000 … 256
+  TMC_write_bit(REG_CHOPCONF, MASK_msres2, 0);			//128, 64, 32, 16, 8, 4, 2, FULLSTEP
+  TMC_write_bit(REG_CHOPCONF, MASK_msres1, 0);
+  TMC_write_bit(REG_CHOPCONF, MASK_msres0, 1);
 
-  TMC_write_word(REG_CHOPCONF, REG_toff, 5);	  	  	//CHOPCONF set basic setting e.g.: TOFF=5, TBL=2, HSTART=4, HEND=0
+  TMC_write_word(REG_CHOPCONF, MASK_toff, 5);	  	  	//CHOPCONF set basic setting e.g.: TOFF=5, TBL=2, HSTART=4, HEND=0
+  after = TMC_read(REG_CHOPCONF);
 
   /*
   TMC_write_bit(REG_CHOPCONF, REG_tbl1, 0);
@@ -197,7 +201,7 @@ int main(void)
   TMC_write_bit(REG_CHOPCONF, REG_hend0, 1);
   HAL_Delay(10);
 */
-
+/*
   //------------------------------------------------------------------------------------------
   //	Velocity Dependent Control
   //------------------------------------------------------------------------------------------
@@ -216,7 +220,7 @@ int main(void)
 
   TMC_write_bit(REG_PWMCONF, REG_pwm_freq0, 0);			//select PWM_FREQ in PWMCONF
   TMC_write_bit(REG_PWMCONF, REG_pwm_freq1, 1);
-
+*/
 /*
   //------------------------------------------------------------------------------------------
   //	SGTHRS
@@ -239,7 +243,7 @@ int main(void)
   TIM1->DIER |= TIM_DIER_CC1IE;
 
   //change ccr1 register and therefore change rotation speed of motor
-  TIM1->CCR1 = 500;
+  TIM1->CCR1 = 5000;
   //---------------------------------------------------------
   HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, RESET);
 

@@ -34,3 +34,9 @@ vactual
 upscaling
 microstepping
 rsense
+oct
+sgresult
+stallguard
+spreadcycle
+microstep
+microsteps
