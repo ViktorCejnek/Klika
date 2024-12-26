@@ -1,8 +1,10 @@
 /**
- * @file TMC2009_UART.h
+ *	@file TMC2009_UART.h
  *
- *  Created on: May 6, 2024
- *      Author: Viktor Cejnek
+ *  @date
+ *  May 6, 2024
+ *	@author
+ *	Viktor Cejnek
  */
 
 #include "stm32wbxx_hal.h"
@@ -10,14 +12,19 @@
 #ifndef INC_TMC2009_UART_H
 #define INC_TMC2009_UART_H
 
-void TMC_turn (int16_t angle);
-uint32_t TMC_read (uint8_t address);
-uint32_t TMC_write_bit (uint8_t reg_address, uint32_t reg_mask, uint8_t data);
-uint32_t TMC_write_word (uint8_t reg_address, uint32_t reg_mask, uint32_t data);
+uint32_t TMC_read(uint8_t address);
+uint32_t TMC_read_word(uint8_t reg_address, uint32_t reg_mask);
+uint32_t TMC_write_only(uint8_t reg_address, uint32_t data);
+uint32_t TMC_write_bit(uint8_t reg_address, uint32_t reg_mask, uint8_t data);
+uint32_t TMC_write_word(uint8_t reg_address, uint32_t reg_mask, uint32_t data);
 uint32_t TMC_write_IHOLD_IRUN(uint8_t IHOLD, uint8_t IRUN, uint8_t IHOLDDELAY);
+
+
+void TMC_VACTUAL(int16_t velocity);
+/*
 uint32_t TMC_write_stop(void);
 uint32_t TMC_write_move_angle(uint32_t angle);
-
+*/
 
 typedef union
 {
@@ -261,8 +268,8 @@ uint16_t m_UART_communication_timeout; // int(20000/baudrate*1000)*/
 
 
 // Filter registers to R, RW and W
-#define R	0x1
-#define W	0x2
+#define W	0x1
+#define R	0x2
 #define RW	0x3
 
 static const uint8_t register_filter[][2]={

@@ -40,3 +40,6 @@ stallguard
 spreadcycle
 microstep
 microsteps
+const
+usteps
+mres

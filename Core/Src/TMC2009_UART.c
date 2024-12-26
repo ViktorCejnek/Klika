@@ -1,8 +1,10 @@
 /**
- * @file TMC2009_UART.c
+ *	@file TMC2009_UART.c
  *
- *  Created on: May 6, 2024
- *      Author: Viktor Cejnek
+ *  @date
+ *  May 6, 2024
+ *	@author
+ *	Viktor Cejnek
  */
 
 #include "main.h"
@@ -22,6 +24,13 @@ uint16_t m_UART_communication_pause = 52083; // int(500/baudrate*1000000)
 uint16_t m_UART_communication_timeout = 2083; // int(20000/baudrate*1000)
 
 
+/**
+ * @brief Returns specified register
+ *
+ * @param reg_address
+ * @return Specific register.
+ * @retval 0xFFFFFFFF when an error occurs.
+ */
 uint32_t TMC_read (uint8_t reg_address){
 	// Check if the provided reg_address is READ
 	if(check_register(reg_address) & R){
@@ -44,7 +53,24 @@ uint32_t TMC_read (uint8_t reg_address){
 
 	}
 
-	return 0;
+	return 0xFFFFFFFF;
+}
+
+/**
+ * @brief Returns specific part of the register
+ *
+ * @param reg_address
+ * @param reg_mask
+ * @return Specific part of read message.
+ * @retval 0xFFFFFFFF when an error occurs.
+ */
+uint32_t TMC_read_word(uint8_t reg_address, uint32_t reg_mask){
+	write_read_reply_datagram_t UART_response = {0};
+	UART_response.bytes = TMC_read(reg_address);
+	if(UART_response.bytes != 0){
+		return ((reg_mask & UART_response.data) >> (uint32_t)(log2(reg_mask & -reg_mask)));
+	}
+	return 0xFFFFFFFF;
 }
 
 
@@ -63,7 +89,7 @@ uint32_t TMC_write_only(uint8_t reg_address, uint32_t data){
 		return UART_write.data;
 	}
 
-	return 0;
+	return 0xFFFFFFFF;
 }
 
 
@@ -104,7 +130,7 @@ uint32_t TMC_write_bit (uint8_t reg_address, uint32_t reg_mask, uint8_t data){
 		}
 	}
 
-	return 0;
+	return 0xFFFFFFFF;
 }
 
 
@@ -144,7 +170,7 @@ uint32_t TMC_write_word (uint8_t reg_address, uint32_t reg_mask, uint32_t data){
 		}
 	}
 
-	return 0;
+	return 0xFFFFFFFF;
 }
 
 
@@ -163,12 +189,25 @@ uint32_t TMC_write_IHOLD_IRUN(uint8_t IHOLD, uint8_t IRUN, uint8_t IHOLDDELAY){
 		return rev32(UART_write.data);
 	}
 
-	return 0;
+	return 0xFFFFFFFF;
+}
+
+/**
+ * @brief Turns stepper motor at a constant speed.
+ *
+ * @param velocity [usteps/s]
+ */
+void TMC_VACTUAL(int16_t velocity){
+	//	vactual = 200/mres*velocity
+	TMC_write_only(REG_VACTUAL, velocity);
 }
 
 
 /**
  * @brief Calculates the CRC for 32bit message.
+ *
+ * @param data
+ * @return crc
  */
 uint8_t crc_32(uint32_t data){
 	uint8_t crc = 0;
@@ -204,7 +243,13 @@ uint8_t crc_64(uint64_t data){
 }
 
 /**
+ * @brief Checks register against const database.
  *
+ * @details Checks register against const database and returns R, W or RW.
+ * 			eg. 0b10, 0b01, 0b11 or 0b00 in case of an error.
+ * @param reg_adress
+ * @return R, W, RW or 0b00
+ * @retval 0 when register not found.
  */
 uint8_t check_register(uint8_t reg_adress){
 	for (int i = 0; i < sizeof(register_filter)/2; ++i) {

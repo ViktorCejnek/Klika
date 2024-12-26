@@ -121,7 +121,7 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
-
+  //Assigns correct UART to TMC_uart variable.
   TMC_UART = &hlpuart1;
 
 
@@ -169,9 +169,9 @@ int main(void)
   TMC_write_bit(REG_GCONF, MASK_multistep_filt, 1);		//1 = software pulse filtering
   after = TMC_read(REG_GCONF);
 
-  //------------------------------------------------------------------------------------------
-  //	CHOPCONF
-  //------------------------------------------------------------------------------------------
+  ///------------------------------------------------------------------------------------------
+  ///	CHOPCONF
+  ///------------------------------------------------------------------------------------------
   before = TMC_read(REG_CHOPCONF);
   TMC_write_bit(REG_CHOPCONF, MASK_vsense, 1);			//1 = use VSENSE (lower current)
   TMC_write_bit(REG_CHOPCONF, MASK_intpol, 1);			//The actual microstep resolution (MRES) becomes extrapolated to 256 microsteps
@@ -236,7 +236,7 @@ int main(void)
   //**NEW CODE ADDED**
   //---------------------------------------------------------
   //TIM1_CC_IRQHandler(void) generated function is in stm32wbxx_it.c
-
+  /*
   //timer initialization
   TIM1->CR1 |= TIM_CR1_CEN;		//timer enable
   TIM1->DIER |= TIM_DIER_UIE;
@@ -244,16 +244,19 @@ int main(void)
 
   //change ccr1 register and therefore change rotation speed of motor
   TIM1->CCR1 = 5000;
+  */
+
   //---------------------------------------------------------
   HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, RESET);
 
   //---------------------------------------------------------
   //**test loop for stallguard threshold**
   //---------------------------------------------------------
+
+  TMC_VACTUAL(20000);
   while (1){
-	  //sgresult = TMC_read(REG_SG_RESULT);		//use Live Expressions
-	  //sgresult_shifted = (sgresult>>25) | ( (( (sgresult>>16) )&0x1) <<7);
-	  //HAL_Delay(10);
+	  sgresult = TMC_read(REG_SG_RESULT);		//use Live Expressions
+	  HAL_Delay(1);
   }
   //---------------------------------------------------------
 
