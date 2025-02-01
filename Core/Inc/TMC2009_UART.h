@@ -20,7 +20,7 @@ uint32_t TMC_write_word(uint8_t reg_address, uint32_t reg_mask, uint32_t data);
 uint32_t TMC_write_IHOLD_IRUN(uint8_t IHOLD, uint8_t IRUN, uint8_t IHOLDDELAY);
 
 
-void TMC_VACTUAL(int16_t velocity);
+void TMC_VACTUAL(int32_t velocity);
 /*
 uint32_t TMC_write_stop(void);
 uint32_t TMC_write_move_angle(uint32_t angle);

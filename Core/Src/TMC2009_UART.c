@@ -67,7 +67,7 @@ uint32_t TMC_read (uint8_t reg_address){
 uint32_t TMC_read_word(uint8_t reg_address, uint32_t reg_mask){
 	write_read_reply_datagram_t UART_response = {0};
 	UART_response.bytes = TMC_read(reg_address);
-	if(UART_response.bytes != 0){
+	if(UART_response.bytes != 0xFFFFFFFF){
 		return ((reg_mask & UART_response.data) >> (uint32_t)(log2(reg_mask & -reg_mask)));
 	}
 	return 0xFFFFFFFF;
@@ -197,7 +197,7 @@ uint32_t TMC_write_IHOLD_IRUN(uint8_t IHOLD, uint8_t IRUN, uint8_t IHOLDDELAY){
  *
  * @param velocity [usteps/s]
  */
-void TMC_VACTUAL(int16_t velocity){
+void TMC_VACTUAL(int32_t velocity){
 	//	vactual = 200/mres*velocity
 	TMC_write_only(REG_VACTUAL, velocity);
 }

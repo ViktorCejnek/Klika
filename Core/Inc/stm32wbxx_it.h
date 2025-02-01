@@ -27,7 +27,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "TMC2009_UART.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
