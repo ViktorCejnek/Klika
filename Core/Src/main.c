@@ -68,9 +68,13 @@ void PeriphCommonClock_Config(void);
 //uint32_t gstat = 0;
 volatile static uint32_t SG_RESULT = 0;
 volatile static uint32_t SGTHRS = 0;
-uint32_t after = 0;
+//uint32_t after = 0;
 volatile static int32_t speed = 200000;
 volatile static uint8_t DIAG_flag = 0;
+volatile static uint32_t PWM_SCALE_SUM = 0;
+volatile static int32_t PWM_SCALE_AUTO = 0;
+volatile static uint32_t PWM_OFS_AUTO = 0;
+volatile static uint32_t PWM_GRAD_AUTO = 0;
 /* USER CODE END 0 */
 
 /**
@@ -141,16 +145,29 @@ int main(void)
   test = TMC_read(REG_GCONF);
   test = TMC_read(REG_IOIN);
   //TMC_write_IHOLD_IRUN(16, 15, 4);
-  HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_RESET);
 
-  uint32_t before = 0;
+
+  //uint32_t before = 0;
   //uint32_t after = 0;
   //uint32_t sgresult = 0;
 
   ///------------------------------------------------------------------------------------------
   ///	Setup sequence:
   ///------------------------------------------------------------------------------------------
+  HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_RESET);
+  TMC_VACTUAL(0);
   INIT();
+  HAL_Delay(200);
+  HAL_GPIO_WritePin(STEP_GPIO_Port, STEP_Pin, GPIO_PIN_SET);
+  HAL_Delay(1);
+  HAL_GPIO_WritePin(STEP_GPIO_Port, STEP_Pin, GPIO_PIN_RESET);
+  HAL_Delay(1000);
+  SG_RESULT			= TMC_read(REG_SG_RESULT);
+  PWM_SCALE_SUM		= TMC_read_word(REG_PWM_SCALE, MASK_PWM_SCALE_SUM);
+  PWM_SCALE_AUTO	= TMC_read_word(REG_PWM_SCALE, MASK_PWM_SCALE_AUTO);
+  PWM_OFS_AUTO		= TMC_read_word(REG_PWM_AUTO, MASK_PWM_OFS_AUTO);
+  PWM_GRAD_AUTO		= TMC_read_word(REG_PWM_AUTO, MASK_PWM_GRAD_AUTO);
+
 
   //---------------------------------------------------------
   //**NEW CODE ADDED**
@@ -204,25 +221,29 @@ int main(void)
     MX_APPE_Process();
 
     /* USER CODE BEGIN 3 */
-    SG_RESULT = TMC_read(REG_SG_RESULT);
-
     if(DIAG_flag == 1) {
     	HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, SET);
 		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 		speed = -speed;
 		HAL_Delay(1000);
 		HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, RESET);
-		HAL_Delay(2);
+		HAL_Delay(1);
+		TMC_VACTUAL(0);
 		INIT();
-		HAL_Delay(2);
+		HAL_Delay(1000);
 		TMC_VACTUAL(speed);
 		DIAG_flag = 0;
     }
 
-
+    SG_RESULT		= TMC_read(REG_SG_RESULT);
+    PWM_SCALE_SUM	= TMC_read_word(REG_PWM_SCALE, MASK_PWM_SCALE_SUM);
+    PWM_SCALE_AUTO	= TMC_read_word(REG_PWM_SCALE, MASK_PWM_SCALE_AUTO);
+    PWM_OFS_AUTO	= TMC_read_word(REG_PWM_AUTO, MASK_PWM_OFS_AUTO);
+    PWM_GRAD_AUTO	= TMC_read_word(REG_PWM_AUTO, MASK_PWM_GRAD_AUTO);
+    printf("%lu\n", SG_RESULT);
 
     //change ccr1 register and therefore change rotation speed of motor
-    TIM1->CCR1 = 200;
+    //TIM1->CCR1 = 200;
 
 
   }
@@ -308,9 +329,19 @@ void PeriphCommonClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	if(GPIO_Pin == DIAG_Pin) {
-		DIAG_flag = 1;
+int __io_putchar(int ch) {
+    ITM_SendChar(ch);  // Send character via SWO
+    return ch;
+}
+
+
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {				// EXTI interrupt
+	if(GPIO_Pin == DIAG_Pin) {									// Detect stall, set DIAG_flag and disable the driver
+		if(DIAG_flag == 0) {
+			DIAG_flag = 1;
+			HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, SET);
+		}
 	} else {
 	  __NOP();
 	}
@@ -325,11 +356,11 @@ void INIT() {
 	///------------------------------------------------------------------------------------------
 	///	GCONF
 	///------------------------------------------------------------------------------------------
-	TMC_write_bit(REG_GCONF, MASK_pdn_disable, 1);		//1 = disable Power down input/enable UART
+	TMC_write_bit(REG_GCONF, MASK_pdn_disable, 1);			//1 = disable Power down input/enable UART
 	TMC_write_bit(REG_GCONF, MASK_i_scale_analog, 0);		//0 = disable external Vref
 	TMC_write_bit(REG_GCONF, MASK_en_spreadcycle, 0);		//0 = clear en_spreadcycle in GCONF
-	TMC_write_bit(REG_GCONF, MASK_internal_rsense, 0);	//0 = use external Rsense
-	TMC_write_bit(REG_GCONF, MASK_mstep_reg_select, 1);	//1 = use value from MSTEP register
+	TMC_write_bit(REG_GCONF, MASK_internal_rsense, 0);		//0 = use external Rsense
+	TMC_write_bit(REG_GCONF, MASK_mstep_reg_select, 1);		//1 = use value from MSTEP register
 	TMC_write_bit(REG_GCONF, MASK_multistep_filt, 1);		//1 = software pulse filtering
 
 
@@ -358,8 +389,8 @@ void INIT() {
 	///------------------------------------------------------------------------------------------
 	///	PWMCONF
 	///------------------------------------------------------------------------------------------
-	TMC_write_bit(REG_PWMCONF, MASK_pwm_autoscale, 0b0);		//set pwm_autoscale and pwm_autograd in PWMCONF
-	TMC_write_bit(REG_PWMCONF, MASK_pwm_autograd, 0b0);
+	TMC_write_bit(REG_PWMCONF, MASK_pwm_autoscale, 0b1);		//set pwm_autoscale and pwm_autograd in PWMCONF
+	TMC_write_bit(REG_PWMCONF, MASK_pwm_autograd, 0b1);
 
 	TMC_write_word(REG_PWMCONF, MASK_pwm_freq, 1);			//select PWM_FREQ in PWMCONF
 
