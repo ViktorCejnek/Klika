@@ -225,8 +225,7 @@ void EXTI9_5_IRQHandler(void)
   /* USER CODE END EXTI9_5_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(DIAG_Pin);
   /* USER CODE BEGIN EXTI9_5_IRQn 1 */
-  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, SET);
-  TMC_write_only(REG_VACTUAL, 0);
+
   /* USER CODE END EXTI9_5_IRQn 1 */
 }
 

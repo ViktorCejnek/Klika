@@ -69,6 +69,8 @@ void PeriphCommonClock_Config(void);
 volatile static uint32_t SG_RESULT = 0;
 volatile static uint32_t SGTHRS = 0;
 uint32_t after = 0;
+volatile static int32_t speed = 200000;
+volatile static uint8_t DIAG_flag = 0;
 /* USER CODE END 0 */
 
 /**
@@ -145,62 +147,10 @@ int main(void)
   //uint32_t after = 0;
   //uint32_t sgresult = 0;
 
-
-
   ///------------------------------------------------------------------------------------------
   ///	Setup sequence:
   ///------------------------------------------------------------------------------------------
-
-
-  ///------------------------------------------------------------------------------------------
-  ///	GCONF
-  ///------------------------------------------------------------------------------------------
-  TMC_write_bit(REG_GCONF, MASK_pdn_disable, 1);		//1 = disable Power down input/enable UART
-  TMC_write_bit(REG_GCONF, MASK_i_scale_analog, 0);		//0 = disable external Vref
-  TMC_write_bit(REG_GCONF, MASK_en_spreadcycle, 0);		//0 = clear en_spreadcycle in GCONF
-  TMC_write_bit(REG_GCONF, MASK_internal_rsense, 0);	//0 = use external Rsense
-  TMC_write_bit(REG_GCONF, MASK_mstep_reg_select, 1);	//1 = use value from MSTEP register
-  TMC_write_bit(REG_GCONF, MASK_multistep_filt, 1);		//1 = software pulse filtering
-
-
-  ///------------------------------------------------------------------------------------------
-  ///	CHOPCONF
-  ///------------------------------------------------------------------------------------------
-  TMC_write_bit(REG_CHOPCONF, MASK_vsense, 1);			//1 = use VSENSE (lower current)
-  TMC_write_bit(REG_CHOPCONF, MASK_intpol, 1);			//The actual microstep resolution (MRES) becomes extrapolated to 256 microsteps
-  TMC_write_word(REG_CHOPCONF, MASK_msres, 0b0000);		//%0000 = 256 ... 128, 64, 32, 16, 8, 4, 2, FULLSTEP
-
-  TMC_write_word(REG_CHOPCONF, MASK_toff, 5);	  	  	//CHOPCONF set basic setting e.g.: TOFF=5, TBL=2, HSTART=4, HEND=0
-  TMC_write_word(REG_CHOPCONF, MASK_tbl, 2);
-  TMC_write_word(REG_CHOPCONF, MASK_hstrt, 4);
-  TMC_write_word(REG_CHOPCONF, MASK_hend, 0);
-
-
-  ///------------------------------------------------------------------------------------------
-  ///	Velocity Dependent Control
-  ///------------------------------------------------------------------------------------------
-  TMC_write_IHOLD_IRUN(2, 15, 4);						//setup IHOLD, IRUN and I_HOLD_DELAY
-  TMC_write_only(REG_TPWMTHRS, 0b0);					//disable TPWMTHRS for only StealthChop
-  TMC_write_only(REG_TCOOLTHRS, 1024);					// if TSTEP accedes this value CoolStep is disabled
-  	  	  	  	  	  	  	  	  	  	  	  	  		//TPOWERDOWN 2-255 default = 20
-
-
-  ///------------------------------------------------------------------------------------------
-  ///	PWMCONF
-  ///------------------------------------------------------------------------------------------
-  TMC_write_bit(REG_PWMCONF, MASK_pwm_autoscale, 0b1);		//set pwm_autoscale and pwm_autograd in PWMCONF
-  TMC_write_bit(REG_PWMCONF, MASK_pwm_autograd, 0b1);
-
-  TMC_write_word(REG_PWMCONF, MASK_pwm_freq, 1);			//select PWM_FREQ in PWMCONF
-
-
-
-  ///------------------------------------------------------------------------------------------
-  ///	SGTHRS
-  ///------------------------------------------------------------------------------------------
-  TMC_write_only(REG_SGTHRS, 40);
-
-
+  INIT();
 
   //---------------------------------------------------------
   //**NEW CODE ADDED**
@@ -217,27 +167,14 @@ int main(void)
   */
 
   //---------------------------------------------------------
-  HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, RESET);
 
   //---------------------------------------------------------
   //**test loop for stallguard threshold**
   //---------------------------------------------------------
 
-  TMC_VACTUAL(30000);
+  TMC_VACTUAL(speed);
   //TMC_VACTUAL(0);
 
-  while (1){
-	  SG_RESULT = TMC_read(REG_SG_RESULT);		//use Live Expressions
-	  after = TMC_read(REG_TSTEP);
-	  /*if(SG_RESULT<50)
-		  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, SET);
-	  else
-		  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, RESET);*/
-	  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, RESET);
-	  HAL_Delay(1);
-
-  }
-  //---------------------------------------------------------
 
 
 
@@ -267,6 +204,23 @@ int main(void)
     MX_APPE_Process();
 
     /* USER CODE BEGIN 3 */
+    SG_RESULT = TMC_read(REG_SG_RESULT);
+
+    if(DIAG_flag == 1) {
+    	HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, SET);
+		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+		speed = -speed;
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, RESET);
+		HAL_Delay(2);
+		INIT();
+		HAL_Delay(2);
+		TMC_VACTUAL(speed);
+		DIAG_flag = 0;
+    }
+
+
+
     //change ccr1 register and therefore change rotation speed of motor
     TIM1->CCR1 = 200;
 
@@ -354,6 +308,72 @@ void PeriphCommonClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+	if(GPIO_Pin == DIAG_Pin) {
+		DIAG_flag = 1;
+	} else {
+	  __NOP();
+	}
+}
+
+void INIT() {
+///------------------------------------------------------------------------------------------
+///	Setup sequence:
+///------------------------------------------------------------------------------------------
+
+
+	///------------------------------------------------------------------------------------------
+	///	GCONF
+	///------------------------------------------------------------------------------------------
+	TMC_write_bit(REG_GCONF, MASK_pdn_disable, 1);		//1 = disable Power down input/enable UART
+	TMC_write_bit(REG_GCONF, MASK_i_scale_analog, 0);		//0 = disable external Vref
+	TMC_write_bit(REG_GCONF, MASK_en_spreadcycle, 0);		//0 = clear en_spreadcycle in GCONF
+	TMC_write_bit(REG_GCONF, MASK_internal_rsense, 0);	//0 = use external Rsense
+	TMC_write_bit(REG_GCONF, MASK_mstep_reg_select, 1);	//1 = use value from MSTEP register
+	TMC_write_bit(REG_GCONF, MASK_multistep_filt, 1);		//1 = software pulse filtering
+
+
+	///------------------------------------------------------------------------------------------
+	///	CHOPCONF
+	///------------------------------------------------------------------------------------------
+	TMC_write_bit(REG_CHOPCONF, MASK_vsense, 1);			//1 = use VSENSE (lower current)
+	TMC_write_bit(REG_CHOPCONF, MASK_intpol, 1);			//The actual microstep resolution (MRES) becomes extrapolated to 256 microsteps
+	TMC_write_word(REG_CHOPCONF, MASK_msres, 0b0000);		//%0000 = 256 ... 128, 64, 32, 16, 8, 4, 2, FULLSTEP
+
+	TMC_write_word(REG_CHOPCONF, MASK_toff, 5);	  	  	//CHOPCONF set basic setting e.g.: TOFF=5, TBL=2, HSTART=4, HEND=0
+	TMC_write_word(REG_CHOPCONF, MASK_tbl, 2);
+	TMC_write_word(REG_CHOPCONF, MASK_hstrt, 4);
+	TMC_write_word(REG_CHOPCONF, MASK_hend, 0);
+
+
+	///------------------------------------------------------------------------------------------
+	///	Velocity Dependent Control
+	///------------------------------------------------------------------------------------------
+	TMC_write_IHOLD_IRUN(1, 20, 4);						//setup IHOLD, IRUN and I_HOLD_DELAY
+	TMC_write_only(REG_TPWMTHRS, 0b0);					//disable TPWMTHRS for only StealthChop
+	TMC_write_only(REG_TCOOLTHRS, 1024);				//if TSTEP accedes this value CoolStep is disabled
+														//TPOWERDOWN 2-255 default = 20
+
+
+	///------------------------------------------------------------------------------------------
+	///	PWMCONF
+	///------------------------------------------------------------------------------------------
+	TMC_write_bit(REG_PWMCONF, MASK_pwm_autoscale, 0b0);		//set pwm_autoscale and pwm_autograd in PWMCONF
+	TMC_write_bit(REG_PWMCONF, MASK_pwm_autograd, 0b0);
+
+	TMC_write_word(REG_PWMCONF, MASK_pwm_freq, 1);			//select PWM_FREQ in PWMCONF
+
+
+
+	///------------------------------------------------------------------------------------------
+	///	SGTHRS
+	///------------------------------------------------------------------------------------------
+	TMC_write_only(REG_SGTHRS, 100);
+
+
+
+}
+
 void delay_us (uint16_t us) {
 	__HAL_TIM_SET_COUNTER(&htim1,0);  // set the counter value a 0
 	while (__HAL_TIM_GET_COUNTER(&htim1) < us);  // wait for the counter to reach the us input in the parameter

@@ -93,6 +93,8 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN Private defines */
 void delay_us (uint16_t us);
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
+void INIT();
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
