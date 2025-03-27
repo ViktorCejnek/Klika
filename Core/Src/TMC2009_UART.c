@@ -226,6 +226,9 @@ uint8_t crc_32(uint32_t data){
 
 /**
  * @brief Calculates the CRC for 64bit message.
+ *
+ * @param data
+ * @return crc
  */
 uint8_t crc_64(uint64_t data){
 	uint8_t crc = 0;

@@ -42,16 +42,38 @@
 /* USER CODE BEGIN PD */
 
 /* USER CODE END PD */
-
+#define gear_ratio 3
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
+#define steps_per_rot (200*gear_ratio)
+#define time_per_rot (steps_per_rot*speed*HAL_GetTickFreq())
+#define timeout (3*time_per_rot)
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-
 /* USER CODE BEGIN PV */
+  volatile static uint8_t DIAG_flag = 0;
+  volatile static uint8_t f_Lock = 0;
+  volatile static uint8_t f_Unlock = 0;
+  volatile static uint8_t f_Stop= 0;
+  volatile static uint8_t f_Diag = 0;
 
+  uint32_t timer_start;
+  uint32_t timer_now;
+
+
+  //uint32_t sgresult_shifted = 0;
+  //uint32_t tstep = 0;
+  //uint32_t gstat = 0;
+  volatile static uint32_t SG_RESULT = 0;
+  volatile static uint32_t SGTHRS = 0;
+  volatile static int32_t speed = 200000;
+
+  volatile static uint32_t PWM_SCALE_SUM = 0;
+  volatile static int32_t PWM_SCALE_AUTO = 0;
+  volatile static uint32_t PWM_OFS_AUTO = 0;
+  volatile static uint32_t PWM_GRAD_AUTO = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -63,18 +85,7 @@ void PeriphCommonClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-//uint32_t sgresult_shifted = 0;
-//uint32_t tstep = 0;
-//uint32_t gstat = 0;
-volatile static uint32_t SG_RESULT = 0;
-volatile static uint32_t SGTHRS = 0;
-//uint32_t after = 0;
-volatile static int32_t speed = 200000;
-volatile static uint8_t DIAG_flag = 0;
-volatile static uint32_t PWM_SCALE_SUM = 0;
-volatile static int32_t PWM_SCALE_AUTO = 0;
-volatile static uint32_t PWM_OFS_AUTO = 0;
-volatile static uint32_t PWM_GRAD_AUTO = 0;
+
 /* USER CODE END 0 */
 
 /**
@@ -169,31 +180,13 @@ int main(void)
   PWM_GRAD_AUTO		= TMC_read_word(REG_PWM_AUTO, MASK_PWM_GRAD_AUTO);
 
 
-  //---------------------------------------------------------
-  //**NEW CODE ADDED**
-  //---------------------------------------------------------
-  //TIM1_CC_IRQHandler(void) generated function is in stm32wbxx_it.c
-  /*
-  //timer initialization
-  TIM1->CR1 |= TIM_CR1_CEN;		//timer enable
-  TIM1->DIER |= TIM_DIER_UIE;
-  TIM1->DIER |= TIM_DIER_CC1IE;
-
-  //change ccr1 register and therefore change rotation speed of motor
-  TIM1->CCR1 = 5000;
-  */
-
-  //---------------------------------------------------------
-
-  //---------------------------------------------------------
-  //**test loop for stallguard threshold**
-  //---------------------------------------------------------
-
   TMC_VACTUAL(speed);
   //TMC_VACTUAL(0);
 
 
-
+  //---------------------------------------------------------
+  //**test loop for stallguard threshold**
+  //---------------------------------------------------------
 
 /*
   //HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_SET);
@@ -208,6 +201,11 @@ int main(void)
 
 */
 
+
+  enum FSMSTATE {s_Idle, s_Lock, s_Unlock, s_Turning, s_Stopped, s_BLE_report, s_Error} curr_state;
+  curr_state = s_Idle;
+
+
   /* USER CODE END 2 */
 
   /* Init code for STM32_WPAN */
@@ -221,8 +219,67 @@ int main(void)
     MX_APPE_Process();
 
     /* USER CODE BEGIN 3 */
+    ///------------------------------------------------------------------------------------------
+    /// FSM:
+    ///------------------------------------------------------------------------------------------
+    switch (curr_state){
+      case (s_Idle) :
+        if (f_Lock)
+          curr_state = s_Lock;
+        else if (f_Unlock)
+          curr_state = s_Unlock;
+        else
+          curr_state = s_Idle;
+      break;
+
+      case (s_Lock) :
+        Lock();
+        timer_start = HAL_GetTick();
+        curr_state = s_Turning;
+      break;
+
+      case (s_Unlock) :
+        Unlock();
+        timer_start = HAL_GetTick();
+        curr_state = s_Turning;
+      break;
+
+      case (s_Turning) :
+        //timeout, stopped too soon or in correct time
+        timer_now = HAL_GetTick();
+        if ((timer_now - timer_start) > timeout)
+          curr_state = s_Error;
+        else if (f_Diag)
+          if ((timer_now - timer_start) < time_per_rot)
+            curr_state = s_Error;
+          else
+            curr_state = s_BLE_report;
+        else
+          curr_state = s_Turning;
+      break;
+
+      case (s_Stopped) :
+
+      break;
+
+      case (s_BLE_report) :
+
+      break;
+
+      case (s_Error) :
+
+      break;
+
+      default : // Error
+
+      break;
+    }
+
+
+
+
+    /*old example
     if(DIAG_flag == 1) {
-    	HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, SET);
 		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 		speed = -speed;
 		HAL_Delay(1000);
@@ -233,14 +290,15 @@ int main(void)
 		HAL_Delay(1000);
 		TMC_VACTUAL(speed);
 		DIAG_flag = 0;
-    }
+    }*/
 
+    /*
     SG_RESULT		= TMC_read(REG_SG_RESULT);
     PWM_SCALE_SUM	= TMC_read_word(REG_PWM_SCALE, MASK_PWM_SCALE_SUM);
     PWM_SCALE_AUTO	= TMC_read_word(REG_PWM_SCALE, MASK_PWM_SCALE_AUTO);
     PWM_OFS_AUTO	= TMC_read_word(REG_PWM_AUTO, MASK_PWM_OFS_AUTO);
     PWM_GRAD_AUTO	= TMC_read_word(REG_PWM_AUTO, MASK_PWM_GRAD_AUTO);
-    printf("%lu\n", SG_RESULT);
+    printf("%lu\n", SG_RESULT);*/
 
     //change ccr1 register and therefore change rotation speed of motor
     //TIM1->CCR1 = 200;
@@ -399,7 +457,7 @@ void INIT() {
 	///------------------------------------------------------------------------------------------
 	///	SGTHRS
 	///------------------------------------------------------------------------------------------
-	TMC_write_only(REG_SGTHRS, 100);
+	TMC_write_only(REG_SGTHRS, 85);
 
 
 
