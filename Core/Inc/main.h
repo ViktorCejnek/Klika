@@ -63,12 +63,11 @@ enum FLAG
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
+
+/* USER CODE BEGIN EFP */
 void Lock(void);
 void Unlock(void);
 void Stop(void);
-
-/* USER CODE BEGIN EFP */
-
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

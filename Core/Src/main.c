@@ -42,7 +42,7 @@
 /* USER CODE BEGIN PD */
 
 /* USER CODE END PD */
-#define gear_ratio 3
+
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
@@ -52,6 +52,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+
 /* USER CODE BEGIN PV */
 
   volatile static enum FLAG f_diag = no_flag;
@@ -125,12 +126,12 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_RF_Init();
   MX_GPIO_Init();
   MX_ADC1_Init();
   MX_LPUART1_UART_Init();
   MX_RTC_Init();
   MX_TIM1_Init();
+  MX_RF_Init();
   /* USER CODE BEGIN 2 */
 
   ///Assigns correct UART to TMC_uart variable.
