@@ -100,7 +100,38 @@ void Custom_STM_App_Notification(Custom_STM_App_Notification_evt_t *pNotificatio
     /* phone_communication */
     case CUSTOM_STM_CHAR_COMMAND_WRITE_EVT:
       /* USER CODE BEGIN CUSTOM_STM_CHAR_COMMAND_WRITE_EVT */
-
+      if(pNotification->DataTransfered.pPayload[0] == 0x00){          /* ALL Device selected - may be necessary as LB Router informs all connection */
+        if(pNotification->DataTransfered.pPayload[1] == 0x01) {
+                /*HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
+                APP_DBG_MSG("-- P2P APPLICATION SERVER  : Led ON\n");
+                APP_DBG_MSG(" \n\r");
+                P2P_Server_App_Context.LedControl.Led=0x01; /* Led ON */
+        }
+        if(pNotification->DataTransfered.pPayload[1] == 0x00) {
+                /*HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
+                APP_DBG_MSG("-- P2P APPLICATION SERVER  : Led OFF\n");
+                APP_DBG_MSG(" \n\r");
+                P2P_Server_App_Context.LedControl.Led=0x00; /* Led OFF */
+        }
+      }
+      if(pNotification->DataTransfered.pPayload[0] == 0x01){        /* end device 1 selected - may be necessary as LB Router informs all connection */
+        if(pNotification->DataTransfered.pPayload[1] == 0x01) {
+                /*HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
+                TMC_turn(360);
+                TMC_read(REG_DRVSTATUS);
+                APP_DBG_MSG("-- P2P APPLICATION SERVER 1 : Led ON\n");
+                APP_DBG_MSG(" \n\r");
+                P2P_Server_App_Context.LedControl.Led=0x01; /* Led ON */
+        }
+        if(pNotification->DataTransfered.pPayload[1] == 0x00) {
+                /*HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
+                TMC_turn(-360);
+                TMC_read(REG_DRVSTATUS);
+                APP_DBG_MSG("-- P2P APPLICATION SERVER 1 : Led OFF\n");
+                APP_DBG_MSG(" \n\r");
+                P2P_Server_App_Context.LedControl.Led=0x00; /* Led OFF */
+         }
+      }
       /* USER CODE END CUSTOM_STM_CHAR_COMMAND_WRITE_EVT */
       break;
 
