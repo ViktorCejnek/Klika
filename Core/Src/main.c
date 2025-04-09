@@ -53,11 +53,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-  volatile static uint8_t DIAG_flag = 0;
-  volatile static uint8_t f_Lock = 0;
-  volatile static uint8_t f_Unlock = 0;
-  volatile static uint8_t f_Stop= 0;
-  volatile static uint8_t f_Diag = 0;
+
+  volatile static enum FLAG f_diag = no_flag;
+  volatile static enum FLAG f_Lock = no_flag;
+  volatile static enum FLAG f_Unlock = no_flag;
+  volatile static enum FLAG f_Stop = no_flag;
+  volatile static enum FLAG f_Diag = no_flag;
 
   uint32_t timer_start;
   uint32_t timer_now;
@@ -68,10 +69,10 @@
   //uint32_t gstat = 0;
   volatile static uint32_t SG_RESULT = 0;
   volatile static uint32_t SGTHRS = 0;
-  volatile static int32_t speed = 200000;
+  volatile static int32_t  speed = 200000;
 
   volatile static uint32_t PWM_SCALE_SUM = 0;
-  volatile static int32_t PWM_SCALE_AUTO = 0;
+  volatile static int32_t  PWM_SCALE_AUTO = 0;
   volatile static uint32_t PWM_OFS_AUTO = 0;
   volatile static uint32_t PWM_GRAD_AUTO = 0;
 /* USER CODE END PV */
@@ -132,7 +133,7 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
-  //Assigns correct UART to TMC_uart variable.
+  ///Assigns correct UART to TMC_uart variable.
   TMC_UART = &hlpuart1;
 
 
@@ -143,45 +144,8 @@ int main(void)
   HAL_GPIO_WritePin(STEP_GPIO_Port, STEP_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(SPREAD_GPIO_Port, SPREAD_Pin, GPIO_PIN_RESET);
 
-  ///------------------------------------------------------------------------------------------
-  /// Testing of UART communication
-  ///------------------------------------------------------------------------------------------
 
 
-  uint32_t test = 0x01234567;
-  test = rev32(0x01234567);
-  uint64_t test2 = (uint64_t)test<<32 | 0x89abcdef;
-  test2 = rev64(test2);
-
-  test = TMC_read(REG_GCONF);
-  test = TMC_read(REG_IOIN);
-  //TMC_write_IHOLD_IRUN(16, 15, 4);
-
-
-  //uint32_t before = 0;
-  //uint32_t after = 0;
-  //uint32_t sgresult = 0;
-
-  ///------------------------------------------------------------------------------------------
-  ///	Setup sequence:
-  ///------------------------------------------------------------------------------------------
-  HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, GPIO_PIN_RESET);
-  TMC_VACTUAL(0);
-  INIT();
-  HAL_Delay(200);
-  HAL_GPIO_WritePin(STEP_GPIO_Port, STEP_Pin, GPIO_PIN_SET);
-  HAL_Delay(1);
-  HAL_GPIO_WritePin(STEP_GPIO_Port, STEP_Pin, GPIO_PIN_RESET);
-  HAL_Delay(1000);
-  SG_RESULT			= TMC_read(REG_SG_RESULT);
-  PWM_SCALE_SUM		= TMC_read_word(REG_PWM_SCALE, MASK_PWM_SCALE_SUM);
-  PWM_SCALE_AUTO	= TMC_read_word(REG_PWM_SCALE, MASK_PWM_SCALE_AUTO);
-  PWM_OFS_AUTO		= TMC_read_word(REG_PWM_AUTO, MASK_PWM_OFS_AUTO);
-  PWM_GRAD_AUTO		= TMC_read_word(REG_PWM_AUTO, MASK_PWM_GRAD_AUTO);
-
-
-  TMC_VACTUAL(speed);
-  //TMC_VACTUAL(0);
 
 
   //---------------------------------------------------------
@@ -202,7 +166,9 @@ int main(void)
 */
 
 
-  enum FSMSTATE {s_Idle, s_Lock, s_Unlock, s_Turning, s_Stopped, s_BLE_report, s_Error} curr_state;
+
+
+  enum FSMSTATE curr_state;
   curr_state = s_Idle;
 
 
@@ -225,11 +191,17 @@ int main(void)
     switch (curr_state){
       case (s_Idle) :
         if (f_Lock)
-          curr_state = s_Lock;
+          {
+            curr_state = s_Lock;
+          }
         else if (f_Unlock)
-          curr_state = s_Unlock;
+          {
+            curr_state = s_Unlock;
+          }
         else
-          curr_state = s_Idle;
+          {
+            curr_state = s_Idle;
+          }
       break;
 
       case (s_Lock) :
@@ -248,30 +220,44 @@ int main(void)
         //timeout, stopped too soon or in correct time
         timer_now = HAL_GetTick();
         if ((timer_now - timer_start) > timeout)
-          curr_state = s_Error;
+          {
+            curr_state = s_Timeout;
+          }
         else if (f_Diag)
+          {
           if ((timer_now - timer_start) < time_per_rot)
-            curr_state = s_Error;
+            {
+        	  curr_state = s_Soon;
+            }
           else
-            curr_state = s_BLE_report;
+          	{
+              curr_state = s_Finnished;
+          	}
+          f_Diag = 0;
+          }
         else
-          curr_state = s_Turning;
+          {
+            curr_state = s_Turning;
+          }
       break;
 
-      case (s_Stopped) :
-
+      case (s_Timeout) :
+		Stop();
+      	curr_state = s_Idle;
       break;
 
-      case (s_BLE_report) :
+      case (s_Soon) :
 
+		curr_state = s_Idle;
       break;
 
-      case (s_Error) :
+      case (s_Finnished) :
 
+		curr_state = s_Idle;
       break;
 
       default : // Error
-
+    	curr_state = s_Idle;
       break;
     }
 
@@ -387,17 +373,19 @@ void PeriphCommonClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-int __io_putchar(int ch) {
+int __io_putchar(int ch)
+{
     ITM_SendChar(ch);  // Send character via SWO
     return ch;
 }
 
 
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {				// EXTI interrupt
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{				// EXTI interrupt
 	if(GPIO_Pin == DIAG_Pin) {									// Detect stall, set DIAG_flag and disable the driver
-		if(DIAG_flag == 0) {
-			DIAG_flag = 1;
+		if(f_diag == 0) {
+			f_diag = 1;
 			HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, SET);
 		}
 	} else {
@@ -405,7 +393,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {				// EXTI interrupt
 	}
 }
 
-void INIT() {
+
+/**
+ * @brief This function runs number of settings of the TMC2209 stepper motor driver.
+ *
+ */
+void INIT()
+{
 ///------------------------------------------------------------------------------------------
 ///	Setup sequence:
 ///------------------------------------------------------------------------------------------
@@ -463,10 +457,40 @@ void INIT() {
 
 }
 
-void delay_us (uint16_t us) {
+/**
+ * @brief This function sets constant speed of the lock.
+ *
+ */
+void Lock()
+{
+  TMC_VACTUAL(speed);
+}
+
+/**
+ * @brief This function sets constant reverse speed of the lock.
+ *
+ */
+void Unlock()
+{
+  TMC_VACTUAL(-speed);
+}
+
+/**
+ * @brief This function stops the lock.
+ *
+ */
+void Stop()
+{
+  TMC_VACTUAL(0);
+}
+
+
+void delay_us (uint16_t us)
+{
 	__HAL_TIM_SET_COUNTER(&htim1,0);  // set the counter value a 0
 	while (__HAL_TIM_GET_COUNTER(&htim1) < us);  // wait for the counter to reach the us input in the parameter
 }
+
 /* USER CODE END 4 */
 
 /**

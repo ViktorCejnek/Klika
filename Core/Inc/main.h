@@ -40,7 +40,15 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+enum FSMSTATE
+{
+	s_Idle, s_Lock, s_Unlock, s_Turning, s_Timeout, s_Soon, s_Finnished, s_Error
+};
 
+enum FLAG
+{
+	no_flag, flag
+};
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -55,6 +63,9 @@ extern "C" {
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
+void Lock(void);
+void Unlock(void);
+void Stop(void);
 
 /* USER CODE BEGIN EFP */
 
