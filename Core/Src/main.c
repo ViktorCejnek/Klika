@@ -31,6 +31,7 @@
 /* USER CODE BEGIN Includes */
 #include "TMC2009_UART.h"
 #include "rev.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,20 +47,19 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
-#define steps_per_rot (200*gear_ratio)
-#define time_per_rot (steps_per_rot*speed*HAL_GetTickFreq())
-#define timeout (3*time_per_rot)
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
 
-  volatile static enum FLAG f_diag = no_flag;
-  volatile static enum FLAG f_Lock = no_flag;
-  volatile static enum FLAG f_Unlock = no_flag;
-  volatile static enum FLAG f_Stop = no_flag;
-  volatile static enum FLAG f_Diag = no_flag;
+  const int32_t speed = 200000;
+  //const int32_t speed = 50000;
+
+  enum FLAG f_Lock = no_flag;
+  enum FLAG f_Unlock = no_flag;
+  enum FLAG f_Stop = no_flag;
+  enum FLAG f_Diag = no_flag;
 
   uint32_t timer_start;
   uint32_t timer_now;
@@ -70,7 +70,7 @@
   //uint32_t gstat = 0;
   volatile static uint32_t SG_RESULT = 0;
   volatile static uint32_t SGTHRS = 0;
-  volatile static int32_t  speed = 200000;
+  //const int32_t  speed = 200000;
 
   volatile static uint32_t PWM_SCALE_SUM = 0;
   volatile static int32_t  PWM_SCALE_AUTO = 0;
@@ -134,7 +134,7 @@ int main(void)
   MX_RF_Init();
   /* USER CODE BEGIN 2 */
 
-  ///Assigns correct UART to TMC_uart variable.
+  ///Assign correct UART to TMC_uart variable.
   TMC_UART = &hlpuart1;
 
 
@@ -145,9 +145,10 @@ int main(void)
   HAL_GPIO_WritePin(STEP_GPIO_Port, STEP_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(SPREAD_GPIO_Port, SPREAD_Pin, GPIO_PIN_RESET);
 
+  INIT();
 
-
-
+  start_calibration();
+  HAL_Delay(10000);
 
   //---------------------------------------------------------
   //**test loop for stallguard threshold**
@@ -169,7 +170,7 @@ int main(void)
 
 
 
-  enum FSMSTATE curr_state;
+  volatile static enum FSMSTATE curr_state;
   curr_state = s_Idle;
 
 
@@ -189,77 +190,67 @@ int main(void)
     ///------------------------------------------------------------------------------------------
     /// FSM:
     ///------------------------------------------------------------------------------------------
-    switch (curr_state){
-      case (s_Idle) :
-        if (f_Lock)
-          {
-            curr_state = s_Lock;
-          }
-        else if (f_Unlock)
-          {
-            curr_state = s_Unlock;
-          }
-        else
-          {
-            curr_state = s_Idle;
-          }
-      break;
+    switch (curr_state) {
+      case (s_Idle):
+        if (f_Lock) {
+          curr_state = s_Lock;
+        } else if (f_Unlock) {
+          curr_state = s_Unlock;
+        } else {
+          curr_state = s_Idle;
+        }
+        break;
 
-      case (s_Lock) :
+      case (s_Lock):
         Lock();
         timer_start = HAL_GetTick();
         curr_state = s_Turning;
-      break;
+        break;
 
-      case (s_Unlock) :
+      case (s_Unlock):
         Unlock();
         timer_start = HAL_GetTick();
         curr_state = s_Turning;
-      break;
+        break;
 
-      case (s_Turning) :
+      case (s_Turning):
         //timeout, stopped too soon or in correct time
         timer_now = HAL_GetTick();
-        if ((timer_now - timer_start) > timeout)
-          {
-            curr_state = s_Timeout;
+        if ((timer_now - timer_start) > TMC_timeout) {
+          curr_state = s_Timeout;
+        } else if (f_Diag) {
+          if ((timer_now - timer_start) < TMC_time_per_rot) {
+            curr_state = s_Soon;
+          } else {
+            curr_state = s_Finnished;
           }
-        else if (f_Diag)
-          {
-          if ((timer_now - timer_start) < time_per_rot)
-            {
-        	  curr_state = s_Soon;
-            }
-          else
-          	{
-              curr_state = s_Finnished;
-          	}
           f_Diag = 0;
-          }
-        else
-          {
-            curr_state = s_Turning;
-          }
-      break;
+          Stop();
+          HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, RESET);
+        } else {
+          curr_state = s_Turning;
+        }
+        break;
 
-      case (s_Timeout) :
-		Stop();
-      	curr_state = s_Idle;
-      break;
+      case (s_Timeout):
+        Stop();
+        HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, SET);
+        curr_state = s_Idle;
+        break;
 
-      case (s_Soon) :
+      case (s_Soon):
 
-		curr_state = s_Idle;
-      break;
+        curr_state = s_Idle;
+        break;
 
-      case (s_Finnished) :
+      case (s_Finnished):
 
-		curr_state = s_Idle;
-      break;
+        curr_state = s_Idle;
+        break;
 
-      default : // Error
-    	curr_state = s_Idle;
-      break;
+      default: // Error
+        curr_state = s_Idle;
+        break;
     }
 
 
@@ -385,9 +376,9 @@ int __io_putchar(int ch)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {				// EXTI interrupt
 	if(GPIO_Pin == DIAG_Pin) {									// Detect stall, set DIAG_flag and disable the driver
-		if(f_diag == 0) {
-			f_diag = 1;
+		if(f_Diag == no_flag) {
 			HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, SET);
+			f_Diag = flag;
 		}
 	} else {
 	  __NOP();
@@ -452,7 +443,7 @@ void INIT()
 	///------------------------------------------------------------------------------------------
 	///	SGTHRS
 	///------------------------------------------------------------------------------------------
-	TMC_write_only(REG_SGTHRS, 85);
+	//TMC_write_only(REG_SGTHRS, 85);
 
 
 

@@ -49,6 +49,13 @@ enum FLAG
 {
 	no_flag, flag
 };
+
+extern enum FLAG f_Unlock;
+extern enum FLAG f_Stop;
+extern enum FLAG f_Diag;
+extern enum FLAG f_Lock;
+
+extern const int32_t speed;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -58,7 +65,12 @@ enum FLAG
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-
+#define TMC_speed           (200000)
+#define TMC_gear_ratio      (3)
+#define TMC_steps_per_rot   (256 * 200 * (TMC_gear_ratio))
+#define TMC_time_per_rot    ((TMC_steps_per_rot) * (1000) / (speed*0.715))
+#define TMC_timeout         ((3) * (TMC_time_per_rot))
+//#define TMC_timeout         4500
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
@@ -68,6 +80,10 @@ void Error_Handler(void);
 void Lock(void);
 void Unlock(void);
 void Stop(void);
+
+void delay_us (uint16_t us);
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
+void INIT();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -102,9 +118,7 @@ void Stop(void);
 #define DIAG_EXTI_IRQn EXTI9_5_IRQn
 
 /* USER CODE BEGIN Private defines */
-void delay_us (uint16_t us);
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
-void INIT();
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

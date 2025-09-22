@@ -70,6 +70,7 @@ void INIT()
 */
 
 #include "stm32wbxx_hal.h"
+#include "calibration.h"
 
 #ifndef INC_TMC2009_UART_H
 #define INC_TMC2009_UART_H
