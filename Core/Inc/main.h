@@ -42,7 +42,7 @@ extern "C" {
 /* USER CODE BEGIN ET */
 enum FSMSTATE
 {
-	s_Idle, s_Lock, s_Unlock, s_Turning, s_Timeout, s_Soon, s_Finnished, s_Error
+	s_Idle, s_Lock, s_Unlock, s_Calibration, s_Demo, s_Turning, s_Timeout, s_Soon, s_Finnished, s_Error
 };
 
 enum FLAG
@@ -52,6 +52,8 @@ enum FLAG
 
 extern enum FLAG f_Unlock;
 extern enum FLAG f_Stop;
+extern enum FLAG f_Calibration;
+extern enum FLAG f_Demo;
 extern enum FLAG f_Diag;
 extern enum FLAG f_Lock;
 

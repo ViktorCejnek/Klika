@@ -12,7 +12,7 @@
 
 #define set_SGTHRS(threshold) TMC_write_only(REG_SGTHRS, threshold);
 
-void start_calibration();
+void start_Calibration();
 
 enum calib_FSMSTATE
 {

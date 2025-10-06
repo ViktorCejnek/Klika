@@ -7,7 +7,7 @@
 
 #include <calibration.h>
 
-void start_calibration(){
+void start_Calibration(){
   //FSM?
 
   /*

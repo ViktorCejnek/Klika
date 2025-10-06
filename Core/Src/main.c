@@ -21,7 +21,6 @@
 #include "adc.h"
 #include "ipcc.h"
 #include "usart.h"
-#include "memorymap.h"
 #include "rf.h"
 #include "rtc.h"
 #include "tim.h"
@@ -58,6 +57,8 @@
 
   enum FLAG f_Lock = no_flag;
   enum FLAG f_Unlock = no_flag;
+  enum FLAG f_Calibration = no_flag;
+  enum FLAG f_Demo = no_flag;
   enum FLAG f_Stop = no_flag;
   enum FLAG f_Diag = no_flag;
 
@@ -147,8 +148,8 @@ int main(void)
 
   INIT();
 
-  start_calibration();
-  HAL_Delay(10000);
+  //start_calibration();
+  //HAL_Delay(10000);
 
   //---------------------------------------------------------
   //**test loop for stallguard threshold**
@@ -190,13 +191,29 @@ int main(void)
     ///------------------------------------------------------------------------------------------
     /// FSM:
     ///------------------------------------------------------------------------------------------
+
     switch (curr_state) {
       case (s_Idle):
-        if (f_Lock) {
+        if (f_Lock)
+        {
+          f_Lock = no_flag;
+          HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, RESET);
           curr_state = s_Lock;
-        } else if (f_Unlock) {
+        } else if (f_Unlock)
+        {
+          f_Unlock = no_flag;
           curr_state = s_Unlock;
-        } else {
+          HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, RESET);
+        } else if (f_Calibration)
+        {
+          f_Calibration = no_flag;
+          curr_state = s_Calibration;
+        } else if (f_Demo)
+        {
+          f_Demo = no_flag;
+          curr_state = s_Demo;
+        } else
+        {
           curr_state = s_Idle;
         }
         break;
@@ -211,6 +228,16 @@ int main(void)
         Unlock();
         timer_start = HAL_GetTick();
         curr_state = s_Turning;
+        break;
+
+      case (s_Calibration):
+        start_Calibration();
+        curr_state = s_Idle;
+        break;
+
+      case (s_Demo):
+        //start_Demo();
+        curr_state = s_Idle;
         break;
 
       case (s_Turning):
@@ -234,7 +261,7 @@ int main(void)
 
       case (s_Timeout):
         Stop();
-        HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, SET);
+        //HAL_GPIO_WritePin(ENN_GPIO_Port, ENN_Pin, SET);
         curr_state = s_Idle;
         break;
 
@@ -303,13 +330,12 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI1
-                              |RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE
+                              |RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
@@ -351,7 +377,7 @@ void PeriphCommonClock_Config(void)
   /** Initializes the peripherals clock
   */
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SMPS|RCC_PERIPHCLK_RFWAKEUP;
-  PeriphClkInitStruct.RFWakeUpClockSelection = RCC_RFWKPCLKSOURCE_LSI;
+  PeriphClkInitStruct.RFWakeUpClockSelection = RCC_RFWKPCLKSOURCE_LSE;
   PeriphClkInitStruct.SmpsClockSelection = RCC_SMPSCLKSOURCE_HSI;
   PeriphClkInitStruct.SmpsDivSelection = RCC_SMPSCLKDIV_RANGE1;
 
@@ -443,7 +469,7 @@ void INIT()
 	///------------------------------------------------------------------------------------------
 	///	SGTHRS
 	///------------------------------------------------------------------------------------------
-	//TMC_write_only(REG_SGTHRS, 85);
+	TMC_write_only(REG_SGTHRS, 75);
 
 
 
@@ -455,7 +481,7 @@ void INIT()
  */
 void Lock()
 {
-  TMC_VACTUAL(speed);
+  TMC_VACTUAL(-speed);
 }
 
 /**
@@ -464,7 +490,7 @@ void Lock()
  */
 void Unlock()
 {
-  TMC_VACTUAL(-speed);
+  TMC_VACTUAL(speed);
 }
 
 /**
@@ -499,8 +525,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

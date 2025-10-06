@@ -36,7 +36,6 @@
 typedef struct
 {
   /* phone_communication */
-  uint8_t               Char_status_Indication_Status;
   /* USER CODE BEGIN CUSTOM_APP_Context_t */
 
   /* USER CODE END CUSTOM_APP_Context_t */
@@ -78,8 +77,6 @@ uint16_t Connection_Handle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* phone_communication */
-static void Custom_Char_status_Update_Char(void);
-static void Custom_Char_status_Send_Indication(void);
 
 /* USER CODE BEGIN PFP */
 
@@ -98,53 +95,53 @@ void Custom_STM_App_Notification(Custom_STM_App_Notification_evt_t *pNotificatio
     /* USER CODE END CUSTOM_STM_App_Notification_Custom_Evt_Opcode */
 
     /* phone_communication */
-    case CUSTOM_STM_CHAR_COMMAND_WRITE_EVT:
-      /* USER CODE BEGIN CUSTOM_STM_CHAR_COMMAND_WRITE_EVT */
-      if(pNotification->DataTransfered.pPayload[0] == 0x00){          /* ALL Device selected - may be necessary as LB Router informs all connection */
-        if(pNotification->DataTransfered.pPayload[1] == 0x01) {
-                /*HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
-                APP_DBG_MSG("-- P2P APPLICATION SERVER  : Led ON\n");
-                APP_DBG_MSG(" \n\r");
-                P2P_Server_App_Context.LedControl.Led=0x01; /* Led ON */
-        }
-        if(pNotification->DataTransfered.pPayload[1] == 0x00) {
-                /*HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
-                APP_DBG_MSG("-- P2P APPLICATION SERVER  : Led OFF\n");
-                APP_DBG_MSG(" \n\r");
-                P2P_Server_App_Context.LedControl.Led=0x00; /* Led OFF */
-        }
+    case CUSTOM_STM_LOCK_WRITE_NO_RESP_EVT:
+      /* USER CODE BEGIN CUSTOM_STM_LOCK_WRITE_NO_RESP_EVT */
+      if(pNotification->DataTransfered.pPayload[0] == 0x1)
+      {
+        f_Lock = flag;
       }
-      if(pNotification->DataTransfered.pPayload[0] == 0x01){        /* end device 1 selected - may be necessary as LB Router informs all connection */
-        if(pNotification->DataTransfered.pPayload[1] == 0x01) {
-                /*HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
-                TMC_turn(360);
-                TMC_read(REG_DRVSTATUS);
-                APP_DBG_MSG("-- P2P APPLICATION SERVER 1 : Led ON\n");
-                APP_DBG_MSG(" \n\r");
-                P2P_Server_App_Context.LedControl.Led=0x01; /* Led ON */
-        }
-        if(pNotification->DataTransfered.pPayload[1] == 0x00) {
-                /*HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
-                TMC_turn(-360);
-                TMC_read(REG_DRVSTATUS);
-                APP_DBG_MSG("-- P2P APPLICATION SERVER 1 : Led OFF\n");
-                APP_DBG_MSG(" \n\r");
-                P2P_Server_App_Context.LedControl.Led=0x00; /* Led OFF */
-         }
-      }
-      /* USER CODE END CUSTOM_STM_CHAR_COMMAND_WRITE_EVT */
+      /* USER CODE END CUSTOM_STM_LOCK_WRITE_NO_RESP_EVT */
       break;
 
-    case CUSTOM_STM_CHAR_STATUS_INDICATE_ENABLED_EVT:
-      /* USER CODE BEGIN CUSTOM_STM_CHAR_STATUS_INDICATE_ENABLED_EVT */
-
-      /* USER CODE END CUSTOM_STM_CHAR_STATUS_INDICATE_ENABLED_EVT */
+    case CUSTOM_STM_UNLOCK_WRITE_NO_RESP_EVT:
+      /* USER CODE BEGIN CUSTOM_STM_UNLOCK_WRITE_NO_RESP_EVT */
+      if(pNotification->DataTransfered.pPayload[0] == 0x1)
+      {
+        f_Unlock = flag;
+      }
+      /* USER CODE END CUSTOM_STM_UNLOCK_WRITE_NO_RESP_EVT */
       break;
 
-    case CUSTOM_STM_CHAR_STATUS_INDICATE_DISABLED_EVT:
-      /* USER CODE BEGIN CUSTOM_STM_CHAR_STATUS_INDICATE_DISABLED_EVT */
+    case CUSTOM_STM_CALIBRATION_WRITE_NO_RESP_EVT:
+      /* USER CODE BEGIN CUSTOM_STM_CALIBRATION_WRITE_NO_RESP_EVT */
+      if(pNotification->DataTransfered.pPayload[0] == 0x1)
+      {
+        f_Calibration = flag;
+      }
+      /* USER CODE END CUSTOM_STM_CALIBRATION_WRITE_NO_RESP_EVT */
+      break;
 
-      /* USER CODE END CUSTOM_STM_CHAR_STATUS_INDICATE_DISABLED_EVT */
+    case CUSTOM_STM_DEMO_WRITE_NO_RESP_EVT:
+      /* USER CODE BEGIN CUSTOM_STM_DEMO_WRITE_NO_RESP_EVT */
+      if(pNotification->DataTransfered.pPayload[0] == 0x1)
+      {
+        f_Demo = flag;
+      }
+      /* USER CODE END CUSTOM_STM_DEMO_WRITE_NO_RESP_EVT */
+      break;
+
+    case CUSTOM_STM_LED_WRITE_NO_RESP_EVT:
+      /* USER CODE BEGIN CUSTOM_STM_LED_WRITE_NO_RESP_EVT */
+      if(pNotification->DataTransfered.pPayload[0] == 0x1)
+      {
+        HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, SET);
+      }
+      if(pNotification->DataTransfered.pPayload[0] == 0x0)
+      {
+        HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, RESET);
+      }
+      /* USER CODE END CUSTOM_STM_LED_WRITE_NO_RESP_EVT */
       break;
 
     case CUSTOM_STM_NOTIFICATION_COMPLETE_EVT:
@@ -221,44 +218,6 @@ void Custom_APP_Init(void)
  *************************************************************/
 
 /* phone_communication */
-__USED void Custom_Char_status_Update_Char(void) /* Property Read */
-{
-  uint8_t updateflag = 0;
-
-  /* USER CODE BEGIN Char_status_UC_1*/
-
-  /* USER CODE END Char_status_UC_1*/
-
-  if (updateflag != 0)
-  {
-    Custom_STM_App_Update_Char(CUSTOM_STM_CHAR_STATUS, (uint8_t *)UpdateCharData);
-  }
-
-  /* USER CODE BEGIN Char_status_UC_Last*/
-
-  /* USER CODE END Char_status_UC_Last*/
-  return;
-}
-
-void Custom_Char_status_Send_Indication(void) /* Property Indication */
-{
-  uint8_t updateflag = 0;
-
-  /* USER CODE BEGIN Char_status_IS_1*/
-
-  /* USER CODE END Char_status_IS_1*/
-
-  if (updateflag != 0)
-  {
-    Custom_STM_App_Update_Char(CUSTOM_STM_CHAR_STATUS, (uint8_t *)NotifyCharData);
-  }
-
-  /* USER CODE BEGIN Char_status_IS_Last*/
-
-  /* USER CODE END Char_status_IS_Last*/
-
-  return;
-}
 
 /* USER CODE BEGIN FD_LOCAL_FUNCTIONS*/
 

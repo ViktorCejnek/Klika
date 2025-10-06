@@ -225,10 +225,10 @@ uint8_t index_con_int, mutex;
 /**
  * Advertising Data
  */
-uint8_t a_AdvData[7] =
+uint8_t a_AdvData[12] =
 {
   6, AD_TYPE_COMPLETE_LOCAL_NAME, 'K', 'L', 'I', 'K', 'A',  /* Complete name */
-
+  4, AD_TYPE_MANUFACTURER_SPECIFIC_DATA, 0x30, 0x00, 0x00 /*  */,
 };
 
 /* USER CODE BEGIN PV */
@@ -298,7 +298,8 @@ void APP_BLE_Init(void)
      CFG_BLE_TX_PATH_COMPENS,
      CFG_BLE_RX_PATH_COMPENS,
      CFG_BLE_CORE_VERSION,
-     CFG_BLE_OPTIONS_EXT
+     CFG_BLE_OPTIONS_EXT,
+	 CFG_BLE_MAX_ADD_EATT_BEARERS
     }
   };
 

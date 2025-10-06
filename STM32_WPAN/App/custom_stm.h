@@ -35,17 +35,25 @@ extern "C" {
 typedef enum
 {
   /* phone_communication */
-  CUSTOM_STM_CHAR_COMMAND,
-  CUSTOM_STM_CHAR_STATUS,
+  CUSTOM_STM_LOCK,
+  CUSTOM_STM_UNLOCK,
+  CUSTOM_STM_CALIBRATION,
+  CUSTOM_STM_DEMO,
+  CUSTOM_STM_LED,
 } Custom_STM_Char_Opcode_t;
 
 typedef enum
 {
-  /* char_command */
-  CUSTOM_STM_CHAR_COMMAND_WRITE_EVT,
-  /* char_status */
-  CUSTOM_STM_CHAR_STATUS_INDICATE_ENABLED_EVT,
-  CUSTOM_STM_CHAR_STATUS_INDICATE_DISABLED_EVT,
+  /* Lock */
+  CUSTOM_STM_LOCK_WRITE_NO_RESP_EVT,
+  /* Unlock */
+  CUSTOM_STM_UNLOCK_WRITE_NO_RESP_EVT,
+  /* Calibration */
+  CUSTOM_STM_CALIBRATION_WRITE_NO_RESP_EVT,
+  /* Demo */
+  CUSTOM_STM_DEMO_WRITE_NO_RESP_EVT,
+  /* MY_LED */
+  CUSTOM_STM_LED_WRITE_NO_RESP_EVT,
   CUSTOM_STM_NOTIFICATION_COMPLETE_EVT,
 
   CUSTOM_STM_BOOT_REQUEST_EVT
@@ -71,8 +79,11 @@ typedef struct
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
-extern uint16_t SizeChar_Command;
-extern uint16_t SizeChar_Status;
+extern uint16_t SizeLock;
+extern uint16_t SizeUnlock;
+extern uint16_t SizeCalibration;
+extern uint16_t SizeDemo;
+extern uint16_t SizeLed;
 
 /* USER CODE BEGIN EC */
 
